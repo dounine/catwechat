@@ -1,0 +1,6 @@
+.bloop/
+.idea/
+**/.bloop
+**/target
+target/
+**/logs/

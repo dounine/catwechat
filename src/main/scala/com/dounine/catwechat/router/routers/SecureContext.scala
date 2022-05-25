@@ -1,0 +1,45 @@
+package com.dounine.catwechat.router.routers
+
+import akka.actor.typed.ActorSystem
+import akka.stream.SystemMaterializer
+import akka.stream.scaladsl.{Sink, Source}
+import com.dounine.catwechat.model.models.{OpenidModel, UserModel}
+import com.dounine.catwechat.router.routers.errors.{
+  AuthException,
+  LockedException
+}
+import com.dounine.catwechat.router.routers.schema.SchemaDef.RequestInfo
+import com.dounine.catwechat.service.{OpenidStream, UserStream, WechatStream}
+
+import scala.concurrent.Future
+
+class SecureContext(val system: ActorSystem[_], val requestInfo: RequestInfo) {
+  implicit val sys = system
+  implicit val ec = system.executionContext
+  implicit val materializer = SystemMaterializer(system).materializer
+  var openid: Option[String] = None
+  var appid: Option[String] = None
+  def auth(): Future[OpenidModel.OpenidInfo] = {
+    requestInfo.headers
+      .get("token")
+      .orElse(requestInfo.parameters.get("token")) match {
+      case Some(token) =>
+        Source
+          .single(
+            WechatStream.jwtDecode(token)
+          )
+          .collect {
+            case Some(session) => session
+            case None          => throw AuthException("token invalid")
+          }
+          .map(_.openid)
+          .via(OpenidStream.query())
+          .runWith(Sink.head)
+          .collect {
+            case Some(value) => value
+            case None        => throw AuthException("系统错误、请联系客服")
+          }
+      case None => throw AuthException("token required")
+    }
+  }
+}
