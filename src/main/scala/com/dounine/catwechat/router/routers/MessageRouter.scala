@@ -30,7 +30,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   val cluster: Cluster = Cluster.get(system)
   private val logger = LoggerFactory.getLogger(classOf[MessageRouter])
   private val messageService = ServiceSingleton.get(classOf[MessageService])
-  var listenerSwitch = false
+  var listenerSwitch = true
   val charts =
     """
       |[
