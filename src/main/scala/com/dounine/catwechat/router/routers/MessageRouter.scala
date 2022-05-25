@@ -362,12 +362,12 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             .all()
                             .map(words => {
                               words
-                                .find(_.listen)
+                                .filter(_.listen)
                                 .find(word => {
                                   if (word.`match` == "EQ") {
                                     word.text == data.data.content
                                   } else if (word.`match` == "IN") {
-                                    data.data.content.contains(word)
+                                    data.data.content.contains(word.text)
                                   } else false
                                 })
                             })(system.executionContext)
