@@ -161,14 +161,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             })
                             .foreach {
                               case Some(value) =>
-                                logger.info(
-                                  "匹配到关键字 {} ->{}:{} : {}",
-                                  group.nickName,
-                                  value.`match`,
-                                  value.text,
-                                  data.data.content
-                                )
-
                                 messageService
                                   .roomMembers(group.v1)
                                   .map(
@@ -179,6 +171,17 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     }
                                   )
                                   .foreach(nickName => {
+                                    logger.info(
+                                      "匹配到关键字 {} -> {}:{} : {} from {}",
+                                      group.nickName,
+                                      value.`match`,
+                                      value.text,
+                                      data.data.content,
+                                      nickName
+                                        .getOrElse(
+                                          ""
+                                        )
+                                    )
                                     Request
                                       .post[String](
                                         s"${messageUrl}/sendText",
