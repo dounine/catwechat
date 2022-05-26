@@ -66,4 +66,19 @@ object MessageModel {
       data: Seq[ContactData]
   ) extends BaseSerializer
 
+  case class ChatRoomMemberData(
+      chatRoomId: String,
+      userName: String,
+      nickName: String,
+      inviterUserName: String,
+      bigHeadImgUrl: String,
+      smallHeadImgUrl: String
+  ) extends BaseSerializer
+
+  case class ChatRoomMember(
+      code: String,
+      message: String,
+      data: Seq[ChatRoomMemberData]
+  ) extends BaseSerializer
+
 }

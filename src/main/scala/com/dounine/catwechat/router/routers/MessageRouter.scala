@@ -138,7 +138,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
               entity(as[Map[String, Any]]) {
                 _data =>
                   {
-                    logger.info("info {}", _data)
                     val data = _data.toJson.jsonTo[MessageModel.Message]
                     if (data.messageType.toInt == 80001 && listenerSwitch) {
                       charts.find(item =>
@@ -170,34 +169,50 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   data.data.content
                                 )
 
-                                Request
-                                  .post[String](
-                                    s"${messageUrl}/sendText",
-                                    Map(
-                                      "wId" -> wId,
-                                      "wcId" -> wcId,
-                                      "content" -> (group.nickName + " -> " + data.data.content)
-                                    ),
-                                    Map(
-                                      "Authorization" -> authorization
-                                    )
+                                messageService
+                                  .roomMembers(group.v1)
+                                  .map(
+                                    (member: MessageModel.ChatRoomMember) => {
+                                      member.data
+                                        .find(_.userName == data.data.fromUser)
+                                        .map(_.nickName)
+                                    }
                                   )
-                                  .foreach(result => {})
-                                if (value.send) {
-                                  Request
-                                    .post[String](
-                                      s"${messageUrl}/sendText",
-                                      Map(
-                                        "wId" -> wId,
-                                        "wcId" -> data.data.fromGroup,
-                                        "content" -> value.sendMessage
-                                      ),
-                                      Map(
-                                        "Authorization" -> authorization
+                                  .foreach(nickName => {
+                                    Request
+                                      .post[String](
+                                        s"${messageUrl}/sendText",
+                                        Map(
+                                          "wId" -> wId,
+                                          "wcId" -> wcId,
+                                          "content" -> (group.nickName + "：" + nickName
+                                            .getOrElse(
+                                              ""
+                                            ) + " : " + data.data.content)
+                                        ),
+                                        Map(
+                                          "Authorization" -> authorization
+                                        )
                                       )
-                                    )
-                                    .foreach(result => {})
-                                }
+                                      .foreach(result => {})
+
+                                    if (value.send) {
+                                      Request
+                                        .post[String](
+                                          s"${messageUrl}/sendText",
+                                          Map(
+                                            "wId" -> wId,
+                                            "wcId" -> data.data.fromGroup,
+                                            "content" -> value.sendMessage
+                                          ),
+                                          Map(
+                                            "Authorization" -> authorization
+                                          )
+                                        )
+                                        .foreach(result => {})
+                                    }
+                                  })
+
                               case None =>
                             }
                         case None =>

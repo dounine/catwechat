@@ -107,7 +107,7 @@ class MessageService(implicit system: ActorSystem[_]) extends EnumMappers {
   }
 
   /**
-    * 通讯录信息
+    * 群信息列表
     * @return
     */
   def contacts(wcIds: Seq[String]): Future[Seq[MessageModel.ContactData]] = {
@@ -129,6 +129,32 @@ class MessageService(implicit system: ActorSystem[_]) extends EnumMappers {
               )
             )
             .map(_.data)
+        }
+      )
+  }
+
+  /**
+    * 获取群用户列表信息
+    * @return
+    */
+  def roomMembers(chatRoomId: String): Future[MessageModel.ChatRoomMember] = {
+    CacheSource(system)
+      .cache()
+      .orElse[MessageModel.ChatRoomMember](
+        key = "chatRoomId_" + chatRoomId,
+        ttl = 1.hours,
+        value = () => {
+          Request
+            .post[MessageModel.ChatRoomMember](
+              s"${messageUrl}/getChatRoomMember",
+              Map(
+                "wId" -> wId,
+                "chatRoomId" -> chatRoomId
+              ),
+              Map(
+                "Authorization" -> authorization
+              )
+            )
         }
       )
   }
