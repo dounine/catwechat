@@ -290,20 +290,17 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
             complete(result)
           }
         },
-        delete {
-          path("info" / Segment) { id =>
+        post {
+          path("listen" / Segment) { listen =>
+            listenerSwitch = listen.toBoolean
+            ok
+          } ~ path("info" / "delete" / Segment) { id =>
             val result = messageService
               .deleteById(id)
               .map(result => RouterModel.Data(Option(result)))(
                 system.executionContext
               )
             complete(result)
-          }
-        },
-        post {
-          path("listen" / Segment) { listen =>
-            listenerSwitch = listen.toBoolean
-            ok
           } ~ path("info" / "add") {
             entity(as[MessageModel.MessageBody]) {
               data =>
@@ -350,6 +347,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
               entity(as[Map[String, Any]]) {
                 _data =>
                   {
+                    logger.info("info {}", _data)
                     val data = _data.toJson.jsonTo[MessageModel.Message]
                     if (data.messageType.toInt == 80001 && listenerSwitch) {
                       charts.find(item =>
