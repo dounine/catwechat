@@ -29,6 +29,10 @@ class MessageService(implicit system: ActorSystem[_]) extends EnumMappers {
     SlickSession.forDbAndProfile(db, slick.jdbc.MySQLProfile)
 
   private val cacheKey = "messages"
+  private val messageUrl = system.settings.config.getString("app.messageUrl")
+  private val wId = system.settings.config.getString("app.wId")
+  private val authorization =
+    system.settings.config.getString("app.authorization")
 
   def queryById(id: String): Future[Option[MessageModel.MessageDbInfo]] = {
     db.run(dict.filter(db => db.id === id).result.headOption)
@@ -73,6 +77,59 @@ class MessageService(implicit system: ActorSystem[_]) extends EnumMappers {
           db.run(
             dict.result
           )
+      )
+  }
+
+  /**
+    * 获取群列表
+    * @return
+    */
+  def chatrooms(): Future[Seq[String]] = {
+    CacheSource(system)
+      .cache()
+      .orElse[Seq[String]](
+        key = "chatrooms",
+        ttl = 1.days,
+        value = () => {
+          Request
+            .post[MessageModel.AddressList](
+              s"${messageUrl}/getAddressList",
+              Map(
+                "wId" -> wId
+              ),
+              Map(
+                "Authorization" -> authorization
+              )
+            )
+            .map(_.data.chatrooms)
+        }
+      )
+  }
+
+  /**
+    * 通讯录信息
+    * @return
+    */
+  def contacts(wcIds: Seq[String]): Future[Seq[MessageModel.ContactData]] = {
+    CacheSource(system)
+      .cache()
+      .orElse[Seq[MessageModel.ContactData]](
+        key = "contacts_" + wcIds.mkString(","),
+        ttl = 1.days,
+        value = () => {
+          Request
+            .post[MessageModel.Contact](
+              s"${messageUrl}/getContact",
+              Map(
+                "wId" -> wId,
+                "wcId" -> wcIds.mkString(",")
+              ),
+              Map(
+                "Authorization" -> authorization
+              )
+            )
+            .map(_.data)
+        }
       )
   }
 

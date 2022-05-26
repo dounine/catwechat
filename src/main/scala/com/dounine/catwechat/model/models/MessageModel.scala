@@ -22,13 +22,6 @@ object MessageModel {
       sendMessage: String
   ) extends BaseSerializer
 
-  case class MessageInfo(
-      userName: String,
-      nickName: String,
-      smallHead: String,
-      v1: String
-  ) extends BaseSerializer
-
   case class MessageData(
       fromUser: String,
       fromGroup: Option[String] = None,
@@ -45,6 +38,32 @@ object MessageModel {
       account: String,
       messageType: String,
       data: MessageData
+  ) extends BaseSerializer
+
+  case class AddressListData(
+      friends: Seq[String],
+      chatrooms: Seq[String],
+      ghs: Seq[String],
+      others: Seq[String]
+  ) extends BaseSerializer
+
+  case class AddressList(
+      code: String,
+      message: String,
+      data: AddressListData
+  ) extends BaseSerializer
+
+  case class ContactData(
+      userName: String,
+      nickName: String,
+      smallHead: String,
+      v1: String
+  ) extends BaseSerializer
+
+  case class Contact(
+      code: String,
+      message: String,
+      data: Seq[ContactData]
   ) extends BaseSerializer
 
 }

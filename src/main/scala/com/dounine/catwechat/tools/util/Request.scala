@@ -91,7 +91,6 @@ object Request extends JsonParse {
                 .runFold(ByteString.empty)(_ ++ _)
                 .map(_.utf8String)
                 .map((result: String) => {
-                  println(result)
                   classTag[T].toString() match {
                     case "java.lang.String" => result.asInstanceOf[T]
                     case _                  => result.jsonTo[T]
