@@ -39,8 +39,8 @@ object LikeUtil {
     cosvec(ints1, ints2)
   }
 
-  def main(args: Array[String]): Unit = {
-    println(LikeUtil.textCosine("那种猫粮猫咪吃了，有没有其他影响","有没有猫粮推荐"))
-  }
+//  def main(args: Array[String]): Unit = {
+//    println(LikeUtil.textCosine("那种猫粮猫咪吃了，有没有其他影响","有没有猫粮推荐"))
+//  }
 
 }
