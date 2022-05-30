@@ -190,6 +190,7 @@ class Startups(implicit system: ActorSystem[_]) {
         listen = true,
         send = false,
         like = 0.6,
+        useLike = true,
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -200,6 +201,7 @@ class Startups(implicit system: ActorSystem[_]) {
         listen = true,
         send = false,
         like = 0.6,
+        useLike = true,
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -210,6 +212,7 @@ class Startups(implicit system: ActorSystem[_]) {
         listen = true,
         send = false,
         like = 0.6,
+        useLike = true,
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -220,6 +223,7 @@ class Startups(implicit system: ActorSystem[_]) {
         listen = true,
         send = false,
         like = 0.6,
+        useLike = true,
         sendMessage = "",
         createTime = LocalDateTime.now()
       )

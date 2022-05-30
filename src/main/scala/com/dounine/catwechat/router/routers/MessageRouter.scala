@@ -5,10 +5,21 @@ import akka.cluster.{Cluster, MemberStatus}
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, _}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
-import com.dounine.catwechat.model.models.{MessageDing, MessageModel, RouterModel}
+import com.dounine.catwechat.model.models.{
+  MessageDing,
+  MessageModel,
+  RouterModel
+}
 import com.dounine.catwechat.service.MessageService
 import com.dounine.catwechat.tools.util.DingDing.MessageData
-import com.dounine.catwechat.tools.util.{DingDing, IpUtils, LikeUtil, Request, ServiceSingleton, UUIDUtil}
+import com.dounine.catwechat.tools.util.{
+  DingDing,
+  IpUtils,
+  LikeUtil,
+  Request,
+  ServiceSingleton,
+  UUIDUtil
+}
 import org.slf4j.LoggerFactory
 
 import java.time.LocalDateTime
@@ -98,6 +109,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                       listen = data.listen,
                       send = data.send,
                       like = data.like.toDouble,
+                      useLike = data.useLike,
                       sendMessage = data.sendMessage,
                       createTime = LocalDateTime.now()
                     )
@@ -118,6 +130,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                         listen = data.listen,
                         send = data.send,
                         like = data.like.toDouble,
+                        useLike = data.useLike,
                         sendMessage = data.sendMessage,
                         createTime = LocalDateTime.now()
                       )
@@ -143,16 +156,20 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             .map(words => {
                               words
                                 .filter(_.listen)
-                                .find(word=>{
-                                  LikeUtil.textCosine(data.data.content,word.text) >= word.like
+                                .find(word => {
+                                  if (word.useLike) {
+                                    LikeUtil.textCosine(
+                                      data.data.content,
+                                      word.text
+                                    ) >= word.like
+                                  } else {
+                                    if (word.`match` == "EQ") {
+                                      word.text == data.data.content
+                                    } else if (word.`match` == "IN") {
+                                      data.data.content.contains(word.text)
+                                    } else false
+                                  }
                                 })
-                              //                                .find(word => {
-                              //                                  if (word.`match` == "EQ") {
-                              //                                    word.text == data.data.content
-                              //                                  } else if (word.`match` == "IN") {
-                              //                                    data.data.content.contains(word.text)
-                              //                                  } else false
-                              //                                })
                             })
                             .foreach {
                               case Some(value) =>
