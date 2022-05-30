@@ -10,6 +10,7 @@ object MessageModel {
       `match`: String,
       listen: Boolean,
       send: Boolean,
+      like: Double,
       sendMessage: String,
       createTime: LocalDateTime
   ) extends BaseSerializer
@@ -19,6 +20,7 @@ object MessageModel {
       `match`: String,
       listen: Boolean,
       send: Boolean,
+      like: String,
       sendMessage: String
   ) extends BaseSerializer
 

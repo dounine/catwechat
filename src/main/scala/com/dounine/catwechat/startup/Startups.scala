@@ -189,6 +189,7 @@ class Startups(implicit system: ActorSystem[_]) {
         `match` = "IN",
         listen = true,
         send = false,
+        like = 0.6,
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -198,6 +199,7 @@ class Startups(implicit system: ActorSystem[_]) {
         `match` = "IN",
         listen = true,
         send = false,
+        like = 0.6,
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -207,6 +209,7 @@ class Startups(implicit system: ActorSystem[_]) {
         `match` = "IN",
         listen = true,
         send = false,
+        like = 0.6,
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -216,17 +219,18 @@ class Startups(implicit system: ActorSystem[_]) {
         `match` = "IN",
         listen = true,
         send = false,
+        like = 0.6,
         sendMessage = "",
         createTime = LocalDateTime.now()
       )
     ).foreach(item => {
-        ServiceSingleton
-          .get(classOf[MessageService])
-          .insertOrUpdate(item)
-          .foreach(result => {
-            logger.info("insert message result {}", result)
-          })
-      })
+      ServiceSingleton
+        .get(classOf[MessageService])
+        .insertOrUpdate(item)
+        .foreach(result => {
+          logger.info("insert message result {}", result)
+        })
+    })
   }
 
   def httpAfter(): Unit = {

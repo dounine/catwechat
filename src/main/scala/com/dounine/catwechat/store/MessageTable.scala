@@ -23,6 +23,7 @@ class MessageTable(tag: Tag)
       `match`,
       listen,
       send,
+      like,
       sendMessage,
       createTime
     ).mapTo[MessageModel.MessageDbInfo]
@@ -34,6 +35,9 @@ class MessageTable(tag: Tag)
 
   def `match`: Rep[String] =
     column[String]("match", O.Length(100))
+
+  def like: Rep[Double] =
+    column[Double]("like")
 
   def listen: Rep[Boolean] =
     column[Boolean]("listen", O.Length(1))
