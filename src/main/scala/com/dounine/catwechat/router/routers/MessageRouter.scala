@@ -161,7 +161,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     LikeUtil.textCosine(
                                       data.data.content,
                                       word.text
-                                    ) >= word.like
+                                    ) >= word.like && data.data.content.length >= word.text.length
                                   } else {
                                     if (word.`match` == "EQ") {
                                       word.text == data.data.content
