@@ -111,16 +111,27 @@ class FileRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                       .value()
                       .toInt
 
-                    val waterWidth = (sourceImg.getWidth * scale).toInt
-
-                    val watermark = Thumbnails
-                      .of(waterImg)
-                      .size(
-                        waterWidth,
-                        waterWidth * waterImg.getHeight / waterImg.getWidth
-                      )
-                      .keepAspectRatio(false)
-                      .asBufferedImage()
+                    val watermark = if (sourceImg.getWidth > sourceImg.getHeight) {
+                      val waterHeight = (sourceImg.getHeight * scale).toInt
+                      Thumbnails
+                        .of(waterImg)
+                        .size(
+                          waterHeight * waterImg.getWidth / waterImg.getHeight,
+                          waterHeight
+                        )
+                        .keepAspectRatio(false)
+                        .asBufferedImage()
+                    } else {
+                      val waterWidth = (sourceImg.getWidth * scale).toInt
+                      Thumbnails
+                        .of(waterImg)
+                        .size(
+                          waterWidth,
+                          waterWidth * waterImg.getHeight / waterImg.getWidth
+                        )
+                        .keepAspectRatio(false)
+                        .asBufferedImage()
+                    }
 
                     val tmpFile =
                       File.createTempFile("watermark", metadata.fileName)
