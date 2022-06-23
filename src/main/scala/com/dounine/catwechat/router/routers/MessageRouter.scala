@@ -46,7 +46,10 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   val authorization = system.settings.config.getString("app.authorization")
   var charts = Await.result(
     messageService
-      .chatrooms()
+      .initAddress()
+      .flatMap(_ =>{
+        messageService.chatrooms()
+      })
       .flatMap(rooms => {
         messageService.contacts(rooms)
       }),

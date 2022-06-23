@@ -80,6 +80,19 @@ class MessageService(implicit system: ActorSystem[_]) extends EnumMappers {
       )
   }
 
+  def initAddress(): Future[String] = {
+    Request
+      .post[String](
+        s"${messageUrl}/initAddressList",
+        Map(
+          "wId" -> wId
+        ),
+        Map(
+          "Authorization" -> authorization
+        )
+      )
+  }
+
   /**
     * 获取群列表
     * @return
