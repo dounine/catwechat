@@ -25,6 +25,7 @@ class MessageTable(tag: Tag)
       send,
       like,
       useLike,
+      messageType,
       sendMessage,
       createTime
     ).mapTo[MessageModel.MessageDbInfo]
@@ -39,6 +40,9 @@ class MessageTable(tag: Tag)
 
   def like: Rep[Double] =
     column[Double]("like")
+
+  def messageType: Rep[String] =
+    column[String]("messageType", O.Length(50))
 
   def useLike: Rep[Boolean] =
     column[Boolean]("useLike", O.Length(1))

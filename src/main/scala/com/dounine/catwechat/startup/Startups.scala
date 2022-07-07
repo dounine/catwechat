@@ -192,6 +192,7 @@ class Startups(implicit system: ActorSystem[_]) {
         like = 0.6,
         useLike = true,
         sendMessage = "",
+        messageType = "sendText",
         createTime = LocalDateTime.now()
       ),
       MessageModel.MessageDbInfo(
@@ -202,6 +203,7 @@ class Startups(implicit system: ActorSystem[_]) {
         send = false,
         like = 0.6,
         useLike = true,
+        messageType = "sendText",
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -213,6 +215,7 @@ class Startups(implicit system: ActorSystem[_]) {
         send = false,
         like = 0.6,
         useLike = true,
+        messageType = "sendText",
         sendMessage = "",
         createTime = LocalDateTime.now()
       ),
@@ -224,6 +227,7 @@ class Startups(implicit system: ActorSystem[_]) {
         send = false,
         like = 0.6,
         useLike = true,
+        messageType = "sendText",
         sendMessage = "",
         createTime = LocalDateTime.now()
       )

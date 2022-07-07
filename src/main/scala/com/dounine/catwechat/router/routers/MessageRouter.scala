@@ -42,12 +42,13 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   )
   val messageUrl = system.settings.config.getString("app.messageUrl")
   val wId = system.settings.config.getString("app.wId") //实例id
+  val testGroupName = system.settings.config.getString("app.testGroupName") //测试群名
   val wcId = system.settings.config.getString("app.wcId") //群主微信
   val authorization = system.settings.config.getString("app.authorization")
   var charts = Await.result(
     messageService
       .initAddress()
-      .flatMap(_ =>{
+      .flatMap(_ => {
         messageService.chatrooms()
       })
       .flatMap(rooms => {
@@ -55,6 +56,22 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
       }),
     Duration.Inf
   )
+
+  Request
+    .post[String](
+      s"${messageUrl}/sendText",
+      Map(
+        "wId" -> wId,
+        "wcId" -> wcId,
+        "content" -> ("监控群：" + charts
+          .map(_.nickName)
+          .mkString(","))
+      ),
+      Map(
+        "Authorization" -> authorization
+      )
+    )
+    .foreach(result => {})
 
   val route =
     cors() {
@@ -82,19 +99,35 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
           }
         },
         post {
-          path("listen" / Segment) { listen =>
-            listenerSwitch = listen.toBoolean
-            if (listenerSwitch) {
-              messageService
-                .chatrooms()
-                .flatMap((rooms: Seq[String]) => {
-                  messageService.contacts(rooms)
-                })
-                .foreach((_charts: Seq[MessageModel.ContactData]) => {
-                  charts = _charts
-                })
-            }
-            ok
+          path("listen" / Segment) {
+            listen =>
+              listenerSwitch = listen.toBoolean
+              if (listenerSwitch) {
+                messageService
+                  .chatrooms()
+                  .flatMap((rooms: Seq[String]) => {
+                    messageService.contacts(rooms)
+                  })
+                  .foreach((_charts: Seq[MessageModel.ContactData]) => {
+                    Request
+                      .post[String](
+                        s"${messageUrl}/sendText",
+                        Map(
+                          "wId" -> wId,
+                          "wcId" -> wcId,
+                          "content" -> ("监控群：" + _charts
+                            .map(_.nickName)
+                            .mkString(","))
+                        ),
+                        Map(
+                          "Authorization" -> authorization
+                        )
+                      )
+                      .foreach(result => {})
+                    charts = _charts
+                  })
+              }
+              ok
           } ~ path("info" / "delete" / Segment) { id =>
             val result = messageService
               .deleteById(id)
@@ -113,6 +146,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                       send = data.send,
                       like = data.like.toDouble,
                       useLike = data.useLike,
+                      messageType = data.messageType,
                       sendMessage = data.sendMessage,
                       createTime = LocalDateTime.now()
                     )
@@ -134,6 +168,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                         send = data.send,
                         like = data.like.toDouble,
                         useLike = data.useLike,
+                        messageType = data.messageType,
                         sendMessage = data.sendMessage,
                         createTime = LocalDateTime.now()
                       )
@@ -147,11 +182,35 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                 _data =>
                   {
                     val data = _data.toJson.jsonTo[MessageModel.Message]
-                    if (data.messageType.toInt == 80001 && listenerSwitch) {
+                    if (listenerSwitch) {
+                      if (
+                        charts
+                          .find(item => item.nickName == testGroupName)
+                          .map(_.v1)
+                          .contains(data.data.fromGroup.getOrElse(""))
+                      ) {
+                        Request
+                          .post[String](
+                            s"${messageUrl}/sendText",
+                            Map(
+                              "wId" -> wId,
+                              "wcId" -> data.data.fromGroup,
+                              "content" -> data.data.content
+                            ),
+                            Map(
+                              "Authorization" -> authorization
+                            )
+                          )
+                          .foreach(result => {})
+                      }
+
                       charts.find(item =>
                         data.data.fromGroup.contains(
                           item.v1
-                        ) && !data.data.self && data.data.fromUser != wcId
+                        ) || charts
+                          .find(item => item.nickName == testGroupName)
+                          .map(_.v1)
+                          .contains(data.data.fromGroup.getOrElse(""))
                       ) match {
                         case Some(group) =>
                           messageService
@@ -164,7 +223,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     LikeUtil.textCosine(
                                       data.data.content,
                                       word.text
-                                    ) >= word.like && data.data.content.length >= word.text.length
+                                    ) >= word.like
                                   } else {
                                     if (word.`match` == "EQ") {
                                       word.text == data.data.content
@@ -182,10 +241,13 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     (member: MessageModel.ChatRoomMember) => {
                                       member.data
                                         .find(_.userName == data.data.fromUser)
-                                        .map(_.nickName)
+                                        .map(i =>
+                                          i.displayName.getOrElse(i.nickName)
+                                        )
                                     }
                                   )
                                   .foreach(nickName => {
+                                    logger.info("message {}", _data)
                                     logger.info(
                                       "匹配到关键字 {} -> {}:{} : {} from {}",
                                       group.nickName,
@@ -197,27 +259,11 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           ""
                                         )
                                     )
-                                    Request
-                                      .post[String](
-                                        s"${messageUrl}/sendText",
-                                        Map(
-                                          "wId" -> wId,
-                                          "wcId" -> wcId,
-                                          "content" -> (group.nickName + "：" + nickName
-                                            .getOrElse(
-                                              ""
-                                            ) + " : " + data.data.content)
-                                        ),
-                                        Map(
-                                          "Authorization" -> authorization
-                                        )
-                                      )
-                                      .foreach(result => {})
 
                                     if (value.send) {
                                       Request
                                         .post[String](
-                                          s"${messageUrl}/sendText",
+                                          s"${messageUrl}/${value.messageType}",
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
@@ -227,7 +273,34 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                             "Authorization" -> authorization
                                           )
                                         )
-                                        .foreach(result => {})
+                                        .foreach(result => {
+                                          logger.info(
+                                            "send message result {}",
+                                            result
+                                          )
+                                        })
+                                    } else {
+                                      Request
+                                        .post[String](
+                                          s"${messageUrl}/sendText",
+                                          Map(
+                                            "wId" -> wId,
+                                            "wcId" -> wcId,
+                                            "content" -> (group.nickName + "：" + nickName
+                                              .getOrElse(
+                                                ""
+                                              ) + " : " + data.data.content)
+                                          ),
+                                          Map(
+                                            "Authorization" -> authorization
+                                          )
+                                        )
+                                        .foreach(result => {
+                                          logger.info(
+                                            "send message result {}",
+                                            result
+                                          )
+                                        })
                                     }
                                   })
 

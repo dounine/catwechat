@@ -12,6 +12,7 @@ object MessageModel {
       send: Boolean,
       like: Double,
       useLike: Boolean,
+      messageType: String,
       sendMessage: String,
       createTime: LocalDateTime
   ) extends BaseSerializer
@@ -23,6 +24,7 @@ object MessageModel {
       send: Boolean,
       like: String,
       useLike: Boolean,
+      messageType: String,
       sendMessage: String
   ) extends BaseSerializer
 
@@ -76,6 +78,7 @@ object MessageModel {
       nickName: String,
       inviterUserName: String,
       bigHeadImgUrl: String,
+      displayName: Option[String],
       smallHeadImgUrl: String
   ) extends BaseSerializer
 
