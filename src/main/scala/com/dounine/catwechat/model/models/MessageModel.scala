@@ -12,6 +12,7 @@ object MessageModel {
       send: Boolean,
       like: Double,
       useLike: Boolean,
+      assistant: Boolean,
       messageType: String,
       sendMessage: String,
       createTime: LocalDateTime
@@ -24,6 +25,7 @@ object MessageModel {
       send: Boolean,
       like: String,
       useLike: Boolean,
+      assistant: Boolean,
       messageType: String,
       sendMessage: String
   ) extends BaseSerializer

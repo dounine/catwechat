@@ -25,6 +25,7 @@ class MessageTable(tag: Tag)
       send,
       like,
       useLike,
+      assistant,
       messageType,
       sendMessage,
       createTime
@@ -49,6 +50,9 @@ class MessageTable(tag: Tag)
 
   def listen: Rep[Boolean] =
     column[Boolean]("listen", O.Length(1))
+
+  def assistant: Rep[Boolean] =
+    column[Boolean]("assistant", O.Length(1))
 
   def send: Rep[Boolean] =
     column[Boolean]("send", O.Length(1))

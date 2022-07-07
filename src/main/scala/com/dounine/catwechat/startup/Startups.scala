@@ -193,6 +193,7 @@ class Startups(implicit system: ActorSystem[_]) {
         useLike = true,
         sendMessage = "",
         messageType = "sendText",
+        assistant = false,
         createTime = LocalDateTime.now()
       ),
       MessageModel.MessageDbInfo(
@@ -205,6 +206,7 @@ class Startups(implicit system: ActorSystem[_]) {
         useLike = true,
         messageType = "sendText",
         sendMessage = "",
+        assistant = false,
         createTime = LocalDateTime.now()
       ),
       MessageModel.MessageDbInfo(
@@ -217,6 +219,7 @@ class Startups(implicit system: ActorSystem[_]) {
         useLike = true,
         messageType = "sendText",
         sendMessage = "",
+        assistant = false,
         createTime = LocalDateTime.now()
       ),
       MessageModel.MessageDbInfo(
@@ -229,6 +232,7 @@ class Startups(implicit system: ActorSystem[_]) {
         useLike = true,
         messageType = "sendText",
         sendMessage = "",
+        assistant = false,
         createTime = LocalDateTime.now()
       )
     ).foreach(item => {
