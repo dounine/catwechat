@@ -44,6 +44,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   val wId = system.settings.config.getString("app.wId") //实例id
   val testGroupName =
     system.settings.config.getString("app.testGroupName") //测试群名
+  val displayName = system.settings.config.getString("app.displayName") //测试群名
   val wcId = system.settings.config.getString("app.wcId") //群主微信
   val authorization = system.settings.config.getString("app.authorization")
   var charts = Await.result(
@@ -73,6 +74,27 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
       )
     )
     .foreach(result => {})
+
+  val getAppMsgBody: (String, Boolean) => String =
+    (body: String, isCatApp: Boolean) => {
+      if (isCatApp) {
+        val msgBody = "<appmsg[\\s\\S]*</appmsg>".r.findFirstIn(body).get
+        if (msgBody.contains("gh_059d93061ba1@app")) {
+          msgBody.replace(
+              "<sourcedisplayname/>",
+              "<sourcedisplayname />"
+            )
+            .replace(
+              "<sourcedisplayname />",
+              s"<sourcedisplayname>${displayName}</sourcedisplayname>"
+            )
+            .replace(
+              "<sourcedisplayname>猫车群专用</sourcedisplayname>",
+              s"<sourcedisplayname>${displayName}</sourcedisplayname>"
+            )
+        } else msgBody
+      } else body
+    }
 
   val route =
     cors() {
@@ -149,7 +171,10 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                       useLike = data.useLike,
                       messageType = data.messageType,
                       assistant = data.assistant,
-                      sendMessage = data.sendMessage,
+                      sendMessage = getAppMsgBody(
+                        data.sendMessage,
+                        data.messageType == "sendApp"
+                      ),
                       createTime = LocalDateTime.now()
                     )
                   )
@@ -171,7 +196,10 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                         like = data.like.toDouble,
                         useLike = data.useLike,
                         messageType = data.messageType,
-                        sendMessage = data.sendMessage,
+                        sendMessage = getAppMsgBody(
+                          data.sendMessage,
+                          data.messageType == "sendApp"
+                        ),
                         assistant = data.assistant,
                         createTime = LocalDateTime.now()
                       )
