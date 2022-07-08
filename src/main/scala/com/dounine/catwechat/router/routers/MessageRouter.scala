@@ -274,7 +274,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> value.sendMessage
+                                            "content" -> value.sendMessage.trim
                                           ),
                                           Map(
                                             "Authorization" -> authorization
@@ -382,7 +382,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> value.sendMessage
+                                            "content" -> value.sendMessage.trim
                                           ),
                                           Map(
                                             "Authorization" -> authorization
