@@ -234,8 +234,11 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       data.data.content.contains(word.text)
                                     } else if (word.`match` == "ALL") {
                                       word.text
-                                        .split("[,，/]")
-                                        .forall(data.data.content.contains)
+                                        .split("/")
+                                        .exists(
+                                          _.split("[,，]")
+                                            .forall(data.data.content.contains)
+                                        )
                                     } else false
                                   }
                                 })
@@ -321,8 +324,11 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       data.data.content.contains(word.text)
                                     } else if (word.`match` == "ALL") {
                                       word.text
-                                        .split("[,，/]")
-                                        .forall(data.data.content.contains)
+                                        .split("/")
+                                        .exists(
+                                          _.split("[,，]")
+                                            .forall(data.data.content.contains)
+                                        )
                                     } else false
                                   }
                                 })
