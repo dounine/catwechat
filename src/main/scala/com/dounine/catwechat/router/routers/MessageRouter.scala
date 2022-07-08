@@ -80,7 +80,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
       if (isCatApp) {
         val msgBody = "<appmsg[\\s\\S]*</appmsg>".r.findFirstIn(body).get
         if (msgBody.contains("gh_059d93061ba1@app")) {
-          msgBody.replace(
+          msgBody
+            .replace(
               "<sourcedisplayname/>",
               "<sourcedisplayname />"
             )
@@ -355,99 +356,85 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                         case None =>
                       }
 
-                      charts.find(item =>
-                        data.data.fromGroup.contains(
-                          item.v1
-                        ) || charts
-                          .find(item => item.nickName == testGroupName)
-                          .map(_.v1)
-                          .contains(data.data.fromGroup.getOrElse(""))
-                      ) match {
-                        case Some(group) =>
-                          messageService
-                            .all()
-                            .map(words => {
-                              words
-                                .filter(_.listen)
-                                .filter(!_.assistant)
-                                .find(word => {
-                                  if (word.useLike) {
-                                    LikeUtil.textCosine(
-                                      data.data.content,
-                                      word.text
-                                    ) >= word.like
-                                  } else {
-                                    if (word.`match` == "EQ") {
-                                      word.text == data.data.content
-                                    } else if (word.`match` == "IN") {
-                                      data.data.content.contains(word.text)
-                                    } else if (word.`match` == "ALL") {
-                                      word.text
-                                        .split("/")
-                                        .exists(
-                                          _.split("[,，]")
-                                            .forall(data.data.content.contains)
-                                        )
-                                    } else false
-                                  }
-                                })
-                            })
-                            .foreach {
-                              case Some(value) =>
-                                messageService
-                                  .roomMembers(group.v1)
-                                  .map(
-                                    (member: MessageModel.ChatRoomMember) => {
-                                      member.data
-                                        .find(_.userName == data.data.fromUser)
-                                        .map(i =>
-                                          i.displayName.getOrElse(i.nickName)
-                                        )
+                      if (!data.data.self && data.data.fromUser != wcId) {
+                        charts.find(item =>
+                          data.data.fromGroup.contains(
+                            item.v1
+                          ) || charts
+                            .find(item => item.nickName == testGroupName)
+                            .map(_.v1)
+                            .contains(data.data.fromGroup.getOrElse(""))
+                        ) match {
+                          case Some(group) =>
+                            messageService
+                              .all()
+                              .map(words => {
+                                words
+                                  .filter(_.listen)
+                                  .filter(!_.assistant)
+                                  .find(word => {
+                                    if (word.useLike) {
+                                      LikeUtil.textCosine(
+                                        data.data.content,
+                                        word.text
+                                      ) >= word.like
+                                    } else {
+                                      if (word.`match` == "EQ") {
+                                        word.text == data.data.content
+                                      } else if (word.`match` == "IN") {
+                                        data.data.content.contains(word.text)
+                                      } else if (word.`match` == "ALL") {
+                                        word.text
+                                          .split("/")
+                                          .exists(
+                                            _.split("[,，]")
+                                              .forall(
+                                                data.data.content.contains
+                                              )
+                                          )
+                                      } else false
                                     }
-                                  )
-                                  .foreach(nickName => {
-                                    logger.info("message {}", _data)
-                                    logger.info(
-                                      "匹配到关键字 {} -> {}:{} : {} from {}",
-                                      group.nickName,
-                                      value.`match`,
-                                      value.text,
-                                      data.data.content,
-                                      nickName
-                                        .getOrElse(
-                                          ""
-                                        )
+                                  })
+                              })
+                              .foreach {
+                                case Some(value) =>
+                                  messageService
+                                    .roomMembers(group.v1)
+                                    .map(
+                                      (member: MessageModel.ChatRoomMember) => {
+                                        member.data
+                                          .find(
+                                            _.userName == data.data.fromUser
+                                          )
+                                          .map(i =>
+                                            i.displayName.getOrElse(i.nickName)
+                                          )
+                                      }
                                     )
-
-                                    Request
-                                      .post[String](
-                                        s"${messageUrl}/sendText",
-                                        Map(
-                                          "wId" -> wId,
-                                          "wcId" -> wcId,
-                                          "content" -> (group.nickName + "：" + nickName
-                                            .getOrElse(
-                                              ""
-                                            ) + " : " + data.data.content)
-                                        ),
-                                        Map(
-                                          "Authorization" -> authorization
-                                        )
+                                    .foreach(nickName => {
+                                      logger.info("message {}", _data)
+                                      logger.info(
+                                        "匹配到关键字 {} -> {}:{} : {} from {}",
+                                        group.nickName,
+                                        value.`match`,
+                                        value.text,
+                                        data.data.content,
+                                        nickName
+                                          .getOrElse(
+                                            ""
+                                          )
                                       )
-                                      .foreach(result => {
-                                        logger.info(
-                                          "send message result {}",
-                                          result
-                                        )
-                                      })
-                                    if (value.send) {
+
                                       Request
                                         .post[String](
-                                          s"${messageUrl}/${value.messageType}",
+                                          s"${messageUrl}/sendText",
                                           Map(
                                             "wId" -> wId,
-                                            "wcId" -> data.data.fromGroup,
-                                            "content" -> value.sendMessage.trim
+                                            "wcId" -> wcId,
+                                            "content" -> (group.nickName + "：" + nickName
+                                              .getOrElse(
+                                                ""
+                                              ) + " : " + data.data.content)
                                           ),
                                           Map(
                                             "Authorization" -> authorization
@@ -459,12 +446,32 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                             result
                                           )
                                         })
-                                    }
-                                  })
+                                      if (value.send) {
+                                        Request
+                                          .post[String](
+                                            s"${messageUrl}/${value.messageType}",
+                                            Map(
+                                              "wId" -> wId,
+                                              "wcId" -> data.data.fromGroup,
+                                              "content" -> value.sendMessage.trim
+                                            ),
+                                            Map(
+                                              "Authorization" -> authorization
+                                            )
+                                          )
+                                          .foreach(result => {
+                                            logger.info(
+                                              "send message result {}",
+                                              result
+                                            )
+                                          })
+                                      }
+                                    })
 
-                              case None =>
-                            }
-                        case None =>
+                                case None =>
+                              }
+                          case None =>
+                        }
                       }
                     }
                     ok(
