@@ -42,7 +42,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   )
   val messageUrl = system.settings.config.getString("app.messageUrl")
   val wId = system.settings.config.getString("app.wId") //实例id
-  val testGroupName = system.settings.config.getString("app.testGroupName") //测试群名
+  val testGroupName =
+    system.settings.config.getString("app.testGroupName") //测试群名
   val wcId = system.settings.config.getString("app.wcId") //群主微信
   val authorization = system.settings.config.getString("app.authorization")
   var charts = Await.result(
@@ -232,6 +233,10 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       word.text == data.data.content
                                     } else if (word.`match` == "IN") {
                                       data.data.content.contains(word.text)
+                                    } else if (word.`match` == "ALL") {
+                                      word.text
+                                        .split(",")
+                                        .forall(data.data.content.contains)
                                     } else false
                                   }
                                 })
