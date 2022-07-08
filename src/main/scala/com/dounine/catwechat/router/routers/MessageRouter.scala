@@ -215,6 +215,37 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           .contains(data.data.fromGroup.getOrElse(""))
                       ) match {
                         case Some(group) =>
+                          if (
+                            "助理，关键词"
+                              .split("[,，]")
+                              .forall(data.data.content.contains)
+                          ) {
+                            Request
+                              .post[String](
+                                s"${messageUrl}/sendText",
+                                Map(
+                                  "wId" -> wId,
+                                  "wcId" -> data.data.fromGroup,
+                                  "content" -> words
+                                    .filter(_.listen)
+                                    .filter(_.assistant)
+                                    .map(_.text)
+                                    .zipWithIndex
+                                    .map(tp => s"${tp._2 + 1}. ${tp._1}")
+                                    .mkString("\n")
+                                ),
+                                Map(
+                                  "Authorization" -> authorization
+                                )
+                              )
+                              .foreach(result => {
+                                logger.info(
+                                  "send message result {}",
+                                  result
+                                )
+                              })
+                          }
+
                           messageService
                             .all()
                             .map(words => {
