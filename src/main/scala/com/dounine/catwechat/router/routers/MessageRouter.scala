@@ -235,7 +235,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       data.data.content.contains(word.text)
                                     } else if (word.`match` == "ALL") {
                                       word.text
-                                        .split(",")
+                                        .split("[,，/]")
                                         .forall(data.data.content.contains)
                                     } else false
                                   }
@@ -320,6 +320,10 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       word.text == data.data.content
                                     } else if (word.`match` == "IN") {
                                       data.data.content.contains(word.text)
+                                    } else if (word.`match` == "ALL") {
+                                      word.text
+                                        .split("[,，/]")
+                                        .forall(data.data.content.contains)
                                     } else false
                                   }
                                 })
