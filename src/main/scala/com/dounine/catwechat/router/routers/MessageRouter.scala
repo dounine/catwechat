@@ -245,7 +245,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                       ) match {
                         case Some(group) =>
                           if (
-                            "助理，关键词"
+                            "助理，关键字"
                               .split("[,，]")
                               .forall(data.data.content.contains)
                           ) {
@@ -336,9 +336,25 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           s"${messageUrl}/${value.messageType}",
                                           Map(
                                             "wId" -> wId,
-                                            "wcId" -> data.data.fromGroup,
-                                            "content" -> value.sendMessage.trim
-                                          ),
+                                            "wcId" -> data.data.fromGroup
+                                          ) ++ (value.messageType match {
+                                            case "sendEmoji" | "sendNameCard" |
+                                                "sendUrl" | "sendVideo" |
+                                                "sendVoice" | "sendFile" =>
+                                              value.sendMessage
+                                                .split(",")
+                                                .map(i => {
+                                                  i.split(":")
+                                                })
+                                                .map {
+                                                  case Array(f1, f2) => (f1, f2)
+                                                }
+                                                .toMap[String, String]
+                                            case _ =>
+                                              Map(
+                                                "content" -> value.sendMessage.trim
+                                              )
+                                          }),
                                           Map(
                                             "Authorization" -> authorization
                                           )
