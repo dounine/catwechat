@@ -185,28 +185,27 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                 _data =>
                   {
                     val data = _data.toJson.jsonTo[MessageModel.Message]
-                    if (listenerSwitch) {
-                      if (
-                        charts
-                          .find(item => item.nickName == testGroupName)
-                          .map(_.v1)
-                          .contains(data.data.fromGroup.getOrElse(""))
-                      ) {
-                        Request
-                          .post[String](
-                            s"${messageUrl}/sendText",
-                            Map(
-                              "wId" -> wId,
-                              "wcId" -> data.data.fromGroup,
-                              "content" -> data.data.content
-                            ),
-                            Map(
-                              "Authorization" -> authorization
-                            )
+                    if (
+                      charts
+                        .find(item => item.nickName == testGroupName)
+                        .map(_.v1)
+                        .contains(data.data.fromGroup.getOrElse(""))
+                    ) {
+                      Request
+                        .post[String](
+                          s"${messageUrl}/sendText",
+                          Map(
+                            "wId" -> wId,
+                            "wcId" -> data.data.fromGroup,
+                            "content" -> data.data.content
+                          ),
+                          Map(
+                            "Authorization" -> authorization
                           )
-                          .foreach(result => {})
-                      }
-
+                        )
+                        .foreach(result => {})
+                    }
+                    if (data.messageType.toInt == 80001 && listenerSwitch) {
                       charts.find(item =>
                         data.data.fromGroup.contains(
                           item.v1
