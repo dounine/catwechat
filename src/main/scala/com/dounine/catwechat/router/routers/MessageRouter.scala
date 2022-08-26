@@ -324,7 +324,12 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             ("今天消息排行榜", Some(LocalDate.now())),
                             ("昨天消息排行榜", Some(LocalDate.now().minusDays(1))),
                             ("前天消息排行榜", Some(LocalDate.now().minusDays(2))),
-                            ("所有消息排行榜", Option.empty)
+                            ("所有消息排行榜", Option.empty),
+                            ("聊天排行榜", Some(LocalDate.now())),
+                            ("今天聊天排行榜", Some(LocalDate.now())),
+                            ("昨天聊天排行榜", Some(LocalDate.now().minusDays(1))),
+                            ("前天聊天排行榜", Some(LocalDate.now().minusDays(2))),
+                            ("所有聊天排行榜", Option.empty)
                           ).filter(_._1 == data.data.content)
                             .foreach(info => {
                               (info._2 match {
