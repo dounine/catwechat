@@ -162,7 +162,7 @@ class Startups(implicit system: ActorSystem[_]) {
 
     Array(
       SpeakModel.SpeakInfo(
-        date = LocalDate.of(2020, 1, 1),
+        time = LocalDate.of(2020, 1, 1),
         group = "test",
         wxid = "test",
         nickName = "test",
