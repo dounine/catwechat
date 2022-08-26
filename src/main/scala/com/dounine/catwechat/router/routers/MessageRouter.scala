@@ -353,7 +353,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       case None =>
                                         (if (tp._1.wxid == data.data.fromUser)
                                            """🎖"""
-                                         else s"${tp._2 + 1}.")
+                                         else s" ${tp._2 + 1}. ")
                                     }
                                     no + s"${tp._1.nickName} - ${tp._1.sendMsg}条"
                                   })
