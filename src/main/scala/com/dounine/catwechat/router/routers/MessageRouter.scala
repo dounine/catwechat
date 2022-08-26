@@ -292,9 +292,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              "wId" -> wId,
                                              "wcId" -> data.data.fromGroup,
                                              "content" -> (((if (tp2._1)
-                                                              s"${nickName.getOrElse("")} 签到成功、喵币+1💰"
-                                                            else
-                                                              s"${nickName.getOrElse("")} 今日已签到、喵币+0💰") + "\n" + s"当前可用喵币：${tp2._2}💰") + "\n喵币可用于兑换小程序上的所有产品\n10喵币=1元、每天活跃也能增加喵币噢\n例如：#小程序://养猫专用/巅峰猫罐头/0sflgQSpCHxQxHD")
+                                                               s"${nickName.getOrElse("")} 签到成功、喵币+1💰"
+                                                             else
+                                                               s"${nickName.getOrElse("")} 今日已签到、喵币+0💰") + "\n" + s"当前可用喵币：${tp2._2}💰") + "\n喵币可用于兑换小程序上的所有产品\n10喵币=1元、每天活跃也能增加喵币噢\n例如：#小程序://养猫专用/巅峰猫罐头/0sflgQSpCHxQxHD")
                                            ),
                                            Map(
                                              "Authorization" -> authorization
@@ -337,14 +337,26 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                 case None =>
                                   speakService.all(data.data.fromGroup.get)
                               }).foreach(msgs => {
+                                val nos = Map(
+                                  1 -> """🥇""",
+                                  2 -> """🥈""",
+                                  3 -> """🥉"""
+                                )
                                 val users = msgs
                                   .sortBy(_.sendMsg)(
                                     Ordering.Int.reverse
                                   )
                                   .zipWithIndex
-                                  .map(tp =>
-                                    s"${tp._2 + 1}. ${tp._1.nickName}：${tp._1.sendMsg}条"
-                                  )
+                                  .map(tp => {
+                                    val no = nos.get(tp._2 + 1) match {
+                                      case Some(value) => value
+                                      case None =>
+                                        (if (tp._1.wxid == data.data.fromUser)
+                                           """🎖"""
+                                         else s"${tp._2 + 1}.")
+                                    }
+                                    no + s"${tp._1.nickName} - ${tp._1.sendMsg}条"
+                                  })
 
                                 Request
                                   .post[String](
@@ -352,7 +364,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     Map(
                                       "wId" -> wId,
                                       "wcId" -> data.data.fromGroup,
-                                      "content" -> (s">> ${info._1} <<\n" + (if (
+                                      "content" -> (s"💥 ${info._1}💥 \n" + (if (
                                                                                users.isEmpty
                                                                              ) "很冷静，没人说话，空空如也!!"
                                                                              else
