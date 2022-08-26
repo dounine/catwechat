@@ -321,7 +321,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                         case Some(group) =>
                           Array(
                             ("消息排行榜", Some(LocalDate.now())),
-                            ("今日消息排行榜", Some(LocalDate.now())),
+                            ("今天消息排行榜", Some(LocalDate.now())),
                             ("昨天消息排行榜", Some(LocalDate.now().minusDays(1))),
                             ("前天消息排行榜", Some(LocalDate.now().minusDays(2))),
                             ("所有消息排行榜", Option.empty)
@@ -374,9 +374,12 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             })
 
                           if (
-                            "助理，关键字"
-                              .split("[,，]")
-                              .forall(data.data.content.contains)
+                            "助理，关键字/助理，关键词"
+                              .split("/")
+                              .exists(
+                                _.split("[,，]")
+                                  .forall(data.data.content.contains)
+                              )
                           ) {
                             Request
                               .post[String](
@@ -384,11 +387,17 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                 Map(
                                   "wId" -> wId,
                                   "wcId" -> data.data.fromGroup,
-                                  "content" -> words
+                                  "content" -> (Seq(
+                                    "签到",
+                                    "消息排行榜",
+                                    "今天消息排行榜",
+                                    "昨天消息排行榜",
+                                    "前天消息排行榜",
+                                    "所有消息排行榜"
+                                  ) ++ words
                                     .filter(_.listen)
                                     .filter(_.assistant)
-                                    .map(_.text)
-                                    .zipWithIndex
+                                    .map(_.text)).zipWithIndex
                                     .map(tp => s"${tp._2 + 1}. ${tp._1}")
                                     .mkString("\n")
                                 ),
