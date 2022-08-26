@@ -292,9 +292,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              "wId" -> wId,
                                              "wcId" -> data.data.fromGroup,
                                              "content" -> (((if (tp2._1)
-                                                              s"${nickName.getOrElse("")}签到成功、喵币+1"
+                                                              s"${nickName.getOrElse("")} 签到成功、喵币+1💰"
                                                             else
-                                                              s"${nickName.getOrElse("")}今日已签到、喵币+0") + "\n" + s"累计喵币：${tp2._2}") + "\n喵币可兑换小程序上所有产品 #小程序://养猫专用/巅峰猫罐头/0sflgQSpCHxQxHD\n10喵币=1元、每天的活跃也能增加喵币")
+                                                              s"${nickName.getOrElse("")}今日已签到、喵币+0💰") + "\n" + s"当前可用喵币：${tp2._2}💰") + "\n喵币可用于兑换小程序上的所有产品\n例如：#小程序://养猫专用/巅峰猫罐头/0sflgQSpCHxQxHD\n10喵币=1元、每天活跃也能增加喵币噢")
                                            ),
                                            Map(
                                              "Authorization" -> authorization
