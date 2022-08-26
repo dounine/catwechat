@@ -8,42 +8,13 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.persistence.typed.PersistenceId
 import akka.stream.scaladsl.Sink
 import com.dounine.catwechat.behaviors.engine.AccessTokenBehavior.InitToken
-import com.dounine.catwechat.behaviors.engine.{
-  AccessTokenBehavior,
-  DouyinAccountBehavior,
-  JSApiTicketBehavior
-}
-import com.dounine.catwechat.model.models.{MessageModel, SpeakModel, UserModel}
-import com.dounine.catwechat.service.{
-  DictionaryService,
-  MessageService,
-  OpenidStream,
-  OrderService,
-  OrderStream,
-  SpeakService,
-  UserService
-}
-import com.dounine.catwechat.store.{
-  AccountTable,
-  AkkaPersistenerJournalTable,
-  AkkaPersistenerSnapshotTable,
-  BreakDownTable,
-  DictionaryTable,
-  MessageTable,
-  OpenidTable,
-  OrderTable,
-  PayTable,
-  SpeakTable,
-  UserTable
-}
+import com.dounine.catwechat.behaviors.engine.{AccessTokenBehavior, DouyinAccountBehavior, JSApiTicketBehavior}
+import com.dounine.catwechat.model.models.{CheckModel, MessageModel, SpeakModel, UserModel}
+import com.dounine.catwechat.service.{CheckService, DictionaryService, MessageService, OpenidStream, OrderService, OrderStream, SpeakService, UserService}
+import com.dounine.catwechat.store.{AccountTable, AkkaPersistenerJournalTable, AkkaPersistenerSnapshotTable, BreakDownTable, CheckTable, DictionaryTable, MessageTable, OpenidTable, OrderTable, PayTable, SpeakTable, UserTable}
 import com.dounine.catwechat.tools.akka.chrome.ChromePools
 import com.dounine.catwechat.tools.akka.db.DataSource
-import com.dounine.catwechat.tools.util.{
-  DingDing,
-  LockedUsers,
-  OpenidPaySuccess,
-  ServiceSingleton
-}
+import com.dounine.catwechat.tools.util.{DingDing, LockedUsers, OpenidPaySuccess, ServiceSingleton}
 import org.slf4j.{Logger, LoggerFactory}
 import slick.lifted
 
@@ -115,6 +86,7 @@ class Startups(implicit system: ActorSystem[_]) {
     ServiceSingleton.put(classOf[UserService], new UserService())
     ServiceSingleton.put(classOf[MessageService], new MessageService())
     ServiceSingleton.put(classOf[SpeakService], new SpeakService())
+    ServiceSingleton.put(classOf[CheckService], new CheckService())
     ServiceSingleton.put(
       classOf[DictionaryService],
       new DictionaryService()
@@ -135,8 +107,10 @@ class Startups(implicit system: ActorSystem[_]) {
       MessageTable().schema,
       AkkaPersistenerJournalTable().schema,
       AkkaPersistenerSnapshotTable().schema,
-      SpeakTable().schema
+      SpeakTable().schema,
+      CheckTable().schema
     )
+    SpeakTable().schema.createStatements.foreach(println)
     schemas.foreach(schema => {
       try {
         Await.result(
@@ -198,6 +172,21 @@ class Startups(implicit system: ActorSystem[_]) {
     ).foreach(info => {
       Await.result(
         ServiceSingleton.get(classOf[SpeakService]).insertOrUpdate(info),
+        Duration.Inf
+      )
+    })
+
+    Array(
+      CheckModel.CheckInfo(
+        time = LocalDate.of(2020, 1, 1),
+        group = "test",
+        wxid = "test",
+        nickName = "test",
+        createTime = LocalDateTime.now()
+      )
+    ).foreach(info => {
+      Await.result(
+        ServiceSingleton.get(classOf[CheckService]).insertOrUpdate(info),
         Duration.Inf
       )
     })

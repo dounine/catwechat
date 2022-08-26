@@ -1,33 +1,33 @@
 package com.dounine.catwechat.store
 
-import com.dounine.catwechat.model.models.{MessageModel, SpeakModel}
+import com.dounine.catwechat.model.models.{CheckModel, SpeakModel}
 import slick.jdbc.MySQLProfile.api._
 import slick.lifted.ProvenShape
 
 import java.time.{LocalDate, LocalDateTime}
 
-object SpeakTable {
-  def apply(): TableQuery[SpeakTable] = TableQuery[SpeakTable]
+
+object CheckTable {
+  def apply(): TableQuery[CheckTable] = TableQuery[CheckTable]
 }
-class SpeakTable(tag: Tag)
-    extends Table[SpeakModel.SpeakInfo](
+class CheckTable(tag: Tag)
+    extends Table[CheckModel.CheckInfo](
       tag,
-      _tableName = "wechat_listener_speak"
+      _tableName = "wechat_listener_check"
     )
     with EnumMappers {
 
-  override def * : ProvenShape[SpeakModel.SpeakInfo] =
+  override def * : ProvenShape[CheckModel.CheckInfo] =
     (
       time,
       group,
       wxid,
       nickName,
-      sendMsg,
       createTime
-    ).mapTo[SpeakModel.SpeakInfo]
+    ).mapTo[CheckModel.CheckInfo]
 
   def time: Rep[LocalDate] =
-    column[LocalDate]("time", O.SqlType("date"))
+    column[LocalDate]("date", O.SqlType("date"))(localDate2Date)
 
   def group: Rep[String] =
     column[String]("group", O.Length(50))
@@ -38,23 +38,20 @@ class SpeakTable(tag: Tag)
   def nickName: Rep[String] =
     column[String]("nickName", O.Length(50))
 
-  def sendMsg: Rep[Int] =
-    column[Int]("sendMsg")
-
   def createTime: Rep[LocalDateTime] =
-    column[LocalDateTime]("createTime", O.SqlType(timestampOnUpdate))(
+    column[LocalDateTime]("createTime", O.SqlType(timestampOnCreate))(
       localDateTime2timestamp
     )
 
   def pk =
     primaryKey(
-      "wechat_listener_speak_pk",
+      "wechat_listener_check_pk",
       (time, group, wxid)
     )
 
-  def idx_time_group =
+  def idx_date_group =
     index(
-      "wechat_listener_speak_time_group_uindx",
+      "wechat_listener_check_time_group_uindx",
       (time, group),
       unique = false
     )

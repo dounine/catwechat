@@ -37,6 +37,17 @@ trait EnumMappers extends JsonParse {
       }
     )
 
+  implicit val localDate2Date
+  : JdbcType[LocalDate] with BaseTypedType[LocalDate] =
+    MappedColumnType.base[LocalDate, Date](
+      { instant: LocalDate =>
+        if (instant == null) null else Date.valueOf(instant)
+      },
+      { date: Date =>
+        if (date == null) null else date.toLocalDate
+      }
+    )
+
   implicit val finiteDuration2String
       : JdbcType[FiniteDuration] with BaseTypedType[FiniteDuration] =
     MappedColumnType.base[FiniteDuration, String](

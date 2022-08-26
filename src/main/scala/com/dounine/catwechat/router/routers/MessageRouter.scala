@@ -6,12 +6,17 @@ import akka.http.scaladsl.model.{HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, _}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import com.dounine.catwechat.model.models.{
+  CheckModel,
   MessageDing,
   MessageModel,
   RouterModel,
   SpeakModel
 }
-import com.dounine.catwechat.service.{MessageService, SpeakService}
+import com.dounine.catwechat.service.{
+  CheckService,
+  MessageService,
+  SpeakService
+}
 import com.dounine.catwechat.tools.util.DingDing.MessageData
 import com.dounine.catwechat.tools.util.{
   DingDing,
@@ -25,7 +30,7 @@ import org.slf4j.LoggerFactory
 
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent
-import scala.concurrent.{Await, duration}
+import scala.concurrent.{Await, Future, duration}
 import scala.concurrent.duration._
 
 class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
@@ -33,6 +38,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   private val logger = LoggerFactory.getLogger(classOf[MessageRouter])
   private val messageService = ServiceSingleton.get(classOf[MessageService])
   private val speakService = ServiceSingleton.get(classOf[SpeakService])
+  private val checkService = ServiceSingleton.get(classOf[CheckService])
   var listenerSwitch = true
 
   implicit val ec = system.executionContext
@@ -252,16 +258,53 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                               .map(i => i.displayName.getOrElse(i.nickName))
                           })
                           .flatMap(nickName => {
-                            speakService.insertOrUpdate(
-                              SpeakModel.SpeakInfo(
-                                date = LocalDate.now(),
-                                group = data.data.fromGroup.get,
-                                wxid = data.data.fromUser,
-                                nickName = nickName.getOrElse(""),
-                                sendMsg = 1,
-                                createTime = LocalDateTime.now()
+                            speakService
+                              .insertOrUpdate(
+                                SpeakModel.SpeakInfo(
+                                  time = LocalDate.now(),
+                                  group = data.data.fromGroup.get,
+                                  wxid = data.data.fromUser,
+                                  nickName = nickName.getOrElse(""),
+                                  sendMsg = 1,
+                                  createTime = LocalDateTime.now()
+                                )
                               )
-                            )
+                              .zip(
+                                (if (
+                                   "签到" == data.data.content && data.messageType.toInt == 80001
+                                 ) {
+                                   checkService
+                                     .check(
+                                       CheckModel.CheckInfo(
+                                         time = LocalDate.now(),
+                                         group =
+                                           data.data.fromGroup.getOrElse(""),
+                                         wxid = data.data.fromUser,
+                                         nickName = nickName.getOrElse(""),
+                                         createTime = LocalDateTime.now()
+                                       )
+                                     )
+                                     .map(tp2 => {
+                                       Request
+                                         .post[String](
+                                           s"${messageUrl}/sendText",
+                                           Map(
+                                             "wId" -> wId,
+                                             "wcId" -> data.data.fromGroup,
+                                             "content" -> ((if (tp2._1)
+                                                              s"${nickName.getOrElse("")}签到成功、喵币+1"
+                                                            else
+                                                              s"${nickName.getOrElse("")}今日已签到、喵币+0") + "\n" + s"累计喵币：${tp2._2}")
+                                           ),
+                                           Map(
+                                             "Authorization" -> authorization
+                                           )
+                                         )
+                                         .foreach(result => {})
+                                       tp2._2
+                                     })
+                                 } else Future.successful(-1))
+                              )
                           })
                           .foreach(tp2 => {})
                       case None =>
@@ -276,6 +319,60 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           .contains(data.data.fromGroup.getOrElse(""))
                       ) match {
                         case Some(group) =>
+                          Array(
+                            ("消息排行榜", Some(LocalDate.now())),
+                            ("今日消息排行榜", Some(LocalDate.now())),
+                            ("昨天消息排行榜", Some(LocalDate.now().minusDays(1))),
+                            ("前天消息排行榜", Some(LocalDate.now().minusDays(2))),
+                            ("所有消息排行榜", Option.empty)
+                          ).filter(_._1 == data.data.content)
+                            .foreach(info => {
+                              (info._2 match {
+                                case Some(value) =>
+                                  speakService
+                                    .allDate(
+                                      data.data.fromGroup.get,
+                                      value.toString
+                                    )
+                                case None =>
+                                  speakService.all(data.data.fromGroup.get)
+                              }).foreach(msgs => {
+                                val users = msgs
+                                  .sortBy(_.sendMsg)(
+                                    Ordering.Int.reverse
+                                  )
+                                  .zipWithIndex
+                                  .map(tp =>
+                                    s"${tp._2 + 1}. ${tp._1.nickName}：${tp._1.sendMsg}条"
+                                  )
+
+                                Request
+                                  .post[String](
+                                    s"${messageUrl}/sendText",
+                                    Map(
+                                      "wId" -> wId,
+                                      "wcId" -> data.data.fromGroup,
+                                      "content" -> (s">> ${info._1} <<\n" + (if (
+                                                                               users.isEmpty
+                                                                             ) "很冷静，没人说话，空空如也!!"
+                                                                             else
+                                                                               users.mkString(
+                                                                                 "\n"
+                                                                               )))
+                                    ),
+                                    Map(
+                                      "Authorization" -> authorization
+                                    )
+                                  )
+                                  .foreach(result => {
+                                    logger.info(
+                                      "send message result {}",
+                                      result
+                                    )
+                                  })
+                              })
+                            })
+
                           if (
                             "助理，关键字"
                               .split("[,，]")

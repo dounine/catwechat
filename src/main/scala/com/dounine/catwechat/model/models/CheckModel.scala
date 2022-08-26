@@ -2,14 +2,13 @@ package com.dounine.catwechat.model.models
 
 import java.time.{LocalDate, LocalDateTime}
 
-object SpeakModel {
+object CheckModel {
 
-  case class SpeakInfo(
+  case class CheckInfo(
       time: LocalDate,
       group: String,
       wxid: String,
       nickName: String = "",
-      sendMsg: Int = 0,
       createTime: LocalDateTime
   ) extends BaseSerializer
 }
