@@ -165,7 +165,7 @@ class Startups(implicit system: ActorSystem[_]) {
         time = LocalDate.of(2020, 1, 1),
         group = "test",
         wxid = "test",
-        nickName = "test",
+        nickName = "\uD83C\uDF1A",
         sendMsg = 1,
         createTime = LocalDateTime.now()
       )

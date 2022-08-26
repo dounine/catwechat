@@ -130,18 +130,26 @@ class MessageService(implicit system: ActorSystem[_]) extends EnumMappers {
         key = "contacts_" + wcIds.mkString(","),
         ttl = 1.days,
         value = () => {
-          Request
-            .post[MessageModel.Contact](
-              s"${messageUrl}/getContact",
-              Map(
-                "wId" -> wId,
-                "wcId" -> wcIds.mkString(",")
-              ),
-              Map(
-                "Authorization" -> authorization
-              )
+          Future
+            .sequence(
+              wcIds
+                .grouped(20)
+                .map(list => {
+                  Request
+                    .post[MessageModel.Contact](
+                      s"${messageUrl}/getContact",
+                      Map(
+                        "wId" -> wId,
+                        "wcId" -> list.mkString(",")
+                      ),
+                      Map(
+                        "Authorization" -> authorization
+                      )
+                    )
+                    .map(_.data)
+                })
             )
-            .map(_.data)
+            .map(_.flatten.toSeq)
         }
       )
   }
