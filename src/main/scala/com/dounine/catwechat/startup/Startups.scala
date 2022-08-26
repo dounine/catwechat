@@ -20,6 +20,7 @@ import com.dounine.catwechat.service.{
   OpenidStream,
   OrderService,
   OrderStream,
+  SpeakService,
   UserService
 }
 import com.dounine.catwechat.store.{
