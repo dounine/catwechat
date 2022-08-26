@@ -391,7 +391,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             })
 
                           if (
-                            "助理，关键字/助理，关键词"
+                            "助理，关键字/助理，关键词/功能菜单/菜单功能/功能列表"
                               .split("/")
                               .exists(
                                 _.split("[,，]")
