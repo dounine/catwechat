@@ -329,7 +329,12 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             ("今天聊天排行榜", Some(LocalDate.now())),
                             ("昨天聊天排行榜", Some(LocalDate.now().minusDays(1))),
                             ("前天聊天排行榜", Some(LocalDate.now().minusDays(2))),
-                            ("所有聊天排行榜", Option.empty)
+                            ("所有聊天排行榜", Option.empty),
+                            ("活跃排行榜", Some(LocalDate.now())),
+                            ("今天活跃排行榜", Some(LocalDate.now())),
+                            ("昨天活跃排行榜", Some(LocalDate.now().minusDays(1))),
+                            ("前天活跃排行榜", Some(LocalDate.now().minusDays(2))),
+                            ("所有活跃排行榜", Option.empty)
                           ).filter(_._1 == data.data.content)
                             .foreach(info => {
                               (info._2 match {
@@ -360,7 +365,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                            """🎖"""
                                          else s" ${tp._2 + 1}. ")
                                     }
-                                    no + s"${tp._1.nickName} - ${tp._1.sendMsg}条"
+                                    no + s"${tp._1.nickName}"
                                   })
 
                                 Request
