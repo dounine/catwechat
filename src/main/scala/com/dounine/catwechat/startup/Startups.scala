@@ -13,7 +13,7 @@ import com.dounine.catwechat.behaviors.engine.{
   DouyinAccountBehavior,
   JSApiTicketBehavior
 }
-import com.dounine.catwechat.model.models.{MessageModel, UserModel}
+import com.dounine.catwechat.model.models.{MessageModel, SpeakModel, UserModel}
 import com.dounine.catwechat.service.{
   DictionaryService,
   MessageService,
@@ -32,6 +32,7 @@ import com.dounine.catwechat.store.{
   OpenidTable,
   OrderTable,
   PayTable,
+  SpeakTable,
   UserTable
 }
 import com.dounine.catwechat.tools.akka.chrome.ChromePools
@@ -45,7 +46,7 @@ import com.dounine.catwechat.tools.util.{
 import org.slf4j.{Logger, LoggerFactory}
 import slick.lifted
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
@@ -112,6 +113,7 @@ class Startups(implicit system: ActorSystem[_]) {
     ServiceSingleton.put(classOf[OrderService], new OrderService())
     ServiceSingleton.put(classOf[UserService], new UserService())
     ServiceSingleton.put(classOf[MessageService], new MessageService())
+    ServiceSingleton.put(classOf[SpeakService], new SpeakService())
     ServiceSingleton.put(
       classOf[DictionaryService],
       new DictionaryService()
@@ -131,7 +133,8 @@ class Startups(implicit system: ActorSystem[_]) {
       BreakDownTable().schema,
       MessageTable().schema,
       AkkaPersistenerJournalTable().schema,
-      AkkaPersistenerSnapshotTable().schema
+      AkkaPersistenerSnapshotTable().schema,
+      SpeakTable().schema
     )
     schemas.foreach(schema => {
       try {
@@ -181,6 +184,22 @@ class Startups(implicit system: ActorSystem[_]) {
       .runForeach(openids => {
         LockedUsers.init(openids)
       })
+
+    Array(
+      SpeakModel.SpeakInfo(
+        date = LocalDate.of(2020, 1, 1),
+        group = "test",
+        wxid = "test",
+        nickName = "test",
+        sendMsg = 1,
+        createTime = LocalDateTime.now()
+      )
+    ).foreach(info => {
+      Await.result(
+        ServiceSingleton.get(classOf[SpeakService]).insertOrUpdate(info),
+        Duration.Inf
+      )
+    })
 
     Array(
       MessageModel.MessageDbInfo(

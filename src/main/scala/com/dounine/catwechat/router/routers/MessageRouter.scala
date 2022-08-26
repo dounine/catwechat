@@ -8,9 +8,10 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import com.dounine.catwechat.model.models.{
   MessageDing,
   MessageModel,
-  RouterModel
+  RouterModel,
+  SpeakModel
 }
-import com.dounine.catwechat.service.MessageService
+import com.dounine.catwechat.service.{MessageService, SpeakService}
 import com.dounine.catwechat.tools.util.DingDing.MessageData
 import com.dounine.catwechat.tools.util.{
   DingDing,
@@ -22,7 +23,7 @@ import com.dounine.catwechat.tools.util.{
 }
 import org.slf4j.LoggerFactory
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent
 import scala.concurrent.{Await, duration}
 import scala.concurrent.duration._
@@ -31,6 +32,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   val cluster: Cluster = Cluster.get(system)
   private val logger = LoggerFactory.getLogger(classOf[MessageRouter])
   private val messageService = ServiceSingleton.get(classOf[MessageService])
+  private val speakService = ServiceSingleton.get(classOf[SpeakService])
   var listenerSwitch = true
 
   implicit val ec = system.executionContext
@@ -233,6 +235,36 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           )
                         )
                         .foreach(result => {})
+                    }
+                    charts.find(item =>
+                      data.data.fromGroup.contains(
+                        item.v1
+                      )
+                    ) match {
+                      case Some(value) =>
+                        messageService
+                          .roomMembers(value.v1)
+                          .map((member: MessageModel.ChatRoomMember) => {
+                            member.data
+                              .find(
+                                _.userName == data.data.fromUser
+                              )
+                              .map(i => i.displayName.getOrElse(i.nickName))
+                          })
+                          .flatMap(nickName => {
+                            speakService.insertOrUpdate(
+                              SpeakModel.SpeakInfo(
+                                date = LocalDate.now(),
+                                group = data.data.fromGroup.get,
+                                wxid = data.data.fromUser,
+                                nickName = nickName.getOrElse(""),
+                                sendMsg = 1,
+                                createTime = LocalDateTime.now()
+                              )
+                            )
+                          })
+                          .foreach(tp2 => {})
+                      case None =>
                     }
                     if (data.messageType.toInt == 80001 && listenerSwitch) {
                       charts.find(item =>
