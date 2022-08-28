@@ -294,7 +294,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              "content" -> (((if (tp2._1)
                                                                s"${nickName.getOrElse("")} 签到成功、喵币+0.1💰"
                                                              else
-                                                               s"${nickName.getOrElse("")} 今日已签到、喵币+0💰") + "\n" + s"当前可用喵币：${tp2._2/10}💰") + "\n每天活跃也能自动增加喵币噢\n喵币可用于兑换下面链接中的所有产品\nhttps://mmbizurl.cn/s/oeNYNHO4o")
+                                                               s"${nickName.getOrElse("")} 今日已签到、喵币+0💰") + "\n" + s"当前可用喵币：${(tp2._2/10).toDouble}💰") + "\n每天活跃也能自动增加喵币噢\n喵币可用于兑换下面链接中的所有产品\nhttps://mmbizurl.cn/s/oeNYNHO4o")
                                            ),
                                            Map(
                                              "Authorization" -> authorization
