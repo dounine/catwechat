@@ -28,23 +28,31 @@ class SpeakService(implicit system: ActorSystem[_]) extends EnumMappers {
     SlickSession.forDbAndProfile(db, slick.jdbc.MySQLProfile)
 
   implicit val localDate2Date2 = MappedColumnType.base[LocalDate, Date](
-      { instant: LocalDate =>
-        if (instant == null) null else Date.valueOf(instant)
-      },
-      { date: Date =>
-        if (date == null) null else date.toLocalDate
-      }
-    )
+    { instant: LocalDate =>
+      if (instant == null) null else Date.valueOf(instant)
+    },
+    { date: Date =>
+      if (date == null) null else date.toLocalDate
+    }
+  )
 
 
-  def insertOrUpdate(info: SpeakModel.SpeakInfo): Future[Int] = {
+  def insertOrUpdate(info: SpeakModel.SpeakInfo): Future[Seq[SpeakModel.SpeakInfo]] = {
     db.run(
-      sqlu"""INSERT INTO wechat_listener_speak(time,`group`,wxid,nickName,sendMsg) VALUE(${info.time
-        .toString()},${info.group},${info.wxid},${info.nickName},${info.sendMsg}) ON DUPLICATE KEY UPDATE sendMsg=sendMsg+${info.sendMsg},nickName=${info.nickName}"""
+      sqlu"""INSERT INTO wechat_listener_speak(time,`group`,wxid,nickName,sendMsg) VALUE(${
+        info.time
+          .toString()
+      },${info.group},${info.wxid},${info.nickName},${info.sendMsg}) ON DUPLICATE KEY UPDATE sendMsg=sendMsg+${info.sendMsg},nickName=${info.nickName}"""
+    ).flatMap(
+      _ =>
+        db.run(
+          dict.filter(i => i.group === info.group && i.wxid === info.wxid).result
+        )
     )
   }
 
-  implicit val getSpeakInfoResult = GetResult(r => SpeakModel.SpeakInfo(r.nextDate().toLocalDate, r.<<, r.<<, r.<<, r.<<,r.nextTimestamp().toLocalDateTime))
+  implicit val getSpeakInfoResult = GetResult(r => SpeakModel.SpeakInfo(r.nextDate().toLocalDate, r.<<, r.<<, r.<<, r.<<, r.nextTimestamp().toLocalDateTime))
+
   def allDate(group: String, time: String): Future[Seq[SpeakModel.SpeakInfo]] = {
     db.run(
       sql"""select * from wechat_listener_speak where `group` = ${group} and time = ${time}""".as[SpeakModel.SpeakInfo]

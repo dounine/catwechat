@@ -9,9 +9,10 @@ import akka.persistence.typed.PersistenceId
 import akka.stream.scaladsl.Sink
 import com.dounine.catwechat.behaviors.engine.AccessTokenBehavior.InitToken
 import com.dounine.catwechat.behaviors.engine.{AccessTokenBehavior, DouyinAccountBehavior, JSApiTicketBehavior}
-import com.dounine.catwechat.model.models.{CheckModel, MessageModel, SpeakModel, UserModel}
-import com.dounine.catwechat.service.{CheckService, DictionaryService, MessageService, OpenidStream, OrderService, OrderStream, SpeakService, UserService}
-import com.dounine.catwechat.store.{AccountTable, AkkaPersistenerJournalTable, AkkaPersistenerSnapshotTable, BreakDownTable, CheckTable, DictionaryTable, MessageTable, OpenidTable, OrderTable, PayTable, SpeakTable, UserTable}
+import com.dounine.catwechat.model.models.MsgLevelModel.MsgLevelInfo
+import com.dounine.catwechat.model.models.{CheckModel, MessageModel, MsgLevelModel, SpeakModel, UserModel}
+import com.dounine.catwechat.service.{CheckService, DictionaryService, MessageService, MsgLevelService, OpenidStream, OrderService, OrderStream, SpeakService, UserService}
+import com.dounine.catwechat.store.{AccountTable, AkkaPersistenerJournalTable, AkkaPersistenerSnapshotTable, BreakDownTable, CheckTable, DictionaryTable, MessageTable, MsgLevelTable, OpenidTable, OrderTable, PayTable, SpeakTable, UserTable}
 import com.dounine.catwechat.tools.akka.chrome.ChromePools
 import com.dounine.catwechat.tools.akka.db.DataSource
 import com.dounine.catwechat.tools.util.{DingDing, LockedUsers, OpenidPaySuccess, ServiceSingleton}
@@ -31,68 +32,69 @@ class Startups(implicit system: ActorSystem[_]) {
 
   def start(): Unit = {
     import scala.jdk.CollectionConverters._
-//    val wechat = system.settings.config.getConfig("app.wechat")
-//    val appids = wechat.entrySet().asScala.map(_.getKey.split("\\.").head).toSet
-//    appids.foreach(appid => {
-//      sharding
-//        .init(
-//          Entity(
-//            typeKey = AccessTokenBehavior.typeKey
-//          )(
-//            createBehavior = entityContext => AccessTokenBehavior()
-//          )
-//        )
-//        .tell(
-//          ShardingEnvelope(
-//            appid,
-//            AccessTokenBehavior
-//              .InitToken(appid, wechat.getConfig(appid).getString("secret"))
-//          )
-//        )
-//
-//      sharding
-//        .init(
-//          Entity(
-//            typeKey = JSApiTicketBehavior.typeKey
-//          )(
-//            createBehavior = entityContext => JSApiTicketBehavior()
-//          )
-//        )
-//        .tell(
-//          ShardingEnvelope(
-//            appid,
-//            JSApiTicketBehavior
-//              .InitTicket(appid, wechat.getConfig(appid).getString("secret"))
-//          )
-//        )
-//    })
-//    sharding
-//      .init(
-//        Entity(
-//          typeKey = DouyinAccountBehavior.typeKey
-//        )(
-//          createBehavior = entityContext => DouyinAccountBehavior()
-//        )
-//      )
-//      .tell(
-//        ShardingEnvelope(
-//          DouyinAccountBehavior.typeKey.name,
-//          DouyinAccountBehavior
-//            .Init()
-//        )
-//      )
+    //    val wechat = system.settings.config.getConfig("app.wechat")
+    //    val appids = wechat.entrySet().asScala.map(_.getKey.split("\\.").head).toSet
+    //    appids.foreach(appid => {
+    //      sharding
+    //        .init(
+    //          Entity(
+    //            typeKey = AccessTokenBehavior.typeKey
+    //          )(
+    //            createBehavior = entityContext => AccessTokenBehavior()
+    //          )
+    //        )
+    //        .tell(
+    //          ShardingEnvelope(
+    //            appid,
+    //            AccessTokenBehavior
+    //              .InitToken(appid, wechat.getConfig(appid).getString("secret"))
+    //          )
+    //        )
+    //
+    //      sharding
+    //        .init(
+    //          Entity(
+    //            typeKey = JSApiTicketBehavior.typeKey
+    //          )(
+    //            createBehavior = entityContext => JSApiTicketBehavior()
+    //          )
+    //        )
+    //        .tell(
+    //          ShardingEnvelope(
+    //            appid,
+    //            JSApiTicketBehavior
+    //              .InitTicket(appid, wechat.getConfig(appid).getString("secret"))
+    //          )
+    //        )
+    //    })
+    //    sharding
+    //      .init(
+    //        Entity(
+    //          typeKey = DouyinAccountBehavior.typeKey
+    //        )(
+    //          createBehavior = entityContext => DouyinAccountBehavior()
+    //        )
+    //      )
+    //      .tell(
+    //        ShardingEnvelope(
+    //          DouyinAccountBehavior.typeKey.name,
+    //          DouyinAccountBehavior
+    //            .Init()
+    //        )
+    //      )
 
     ServiceSingleton.put(classOf[OrderService], new OrderService())
     ServiceSingleton.put(classOf[UserService], new UserService())
     ServiceSingleton.put(classOf[MessageService], new MessageService())
     ServiceSingleton.put(classOf[SpeakService], new SpeakService())
     ServiceSingleton.put(classOf[CheckService], new CheckService())
+    ServiceSingleton.put(classOf[MsgLevelService], new MsgLevelService())
     ServiceSingleton.put(
       classOf[DictionaryService],
       new DictionaryService()
     )
-//    ChromePools(system).pools
-//      .returnObject(ChromePools(system).pools.borrowObject())
+    //    ChromePools(system).pools
+    //      .returnObject(ChromePools(system).pools.borrowObject())
 
     import slick.jdbc.MySQLProfile.api._
     val db = DataSource(system).source().db
@@ -108,7 +110,8 @@ class Startups(implicit system: ActorSystem[_]) {
       AkkaPersistenerJournalTable().schema,
       AkkaPersistenerSnapshotTable().schema,
       SpeakTable().schema,
-      CheckTable().schema
+      CheckTable().schema,
+      MsgLevelTable().schema
     )
     SpeakTable().schema.createStatements.foreach(println)
     schemas.foreach(schema => {
@@ -172,6 +175,23 @@ class Startups(implicit system: ActorSystem[_]) {
     ).foreach(info => {
       Await.result(
         ServiceSingleton.get(classOf[SpeakService]).insertOrUpdate(info),
+        Duration.Inf
+      )
+    })
+
+    Array(
+      MsgLevelModel.MsgLevelInfo(
+        time = LocalDate.of(2020, 1, 1),
+        group = "test",
+        wxid = "test",
+        nickName = "\uD83C\uDF1A",
+        coin = 1,
+        level = 1,
+        createTime = LocalDateTime.now()
+      )
+    ).foreach(info => {
+      Await.result(
+        ServiceSingleton.get(classOf[MsgLevelService]).insertOrUpdate(info),
         Duration.Inf
       )
     })
@@ -255,19 +275,19 @@ class Startups(implicit system: ActorSystem[_]) {
   }
 
   def httpAfter(): Unit = {
-//    DingDing.sendMessage(
-//      DingDing.MessageType.system,
-//      data = DingDing.MessageData(
-//        markdown = DingDing.Markdown(
-//          title = "系统通知",
-//          text = s"""
-//              |# 程序启动
-//              | - time: ${LocalDateTime.now()}
-//              |""".stripMargin
-//        )
-//      ),
-//      system
-//    )
+    //    DingDing.sendMessage(
+    //      DingDing.MessageType.system,
+    //      data = DingDing.MessageData(
+    //        markdown = DingDing.Markdown(
+    //          title = "系统通知",
+    //          text = s"""
+    //              |# 程序启动
+    //              | - time: ${LocalDateTime.now()}
+    //              |""".stripMargin
+    //        )
+    //      ),
+    //      system
+    //    )
   }
 
 }
