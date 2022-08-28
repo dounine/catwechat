@@ -93,7 +93,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
     MsgLevelModel.LevelRequire(
       level = 1,
       name = "话唠",
-      des = "感谢你为喵群的消息999数、作出的伟大贡献",
+      des = "你为喵群消息999数、作出的伟大贡献",
       msg = 150,
       coin = 1
     ),
@@ -106,12 +106,11 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
     ),
     MsgLevelModel.LevelRequire(
       level = 3,
-      name = "机器嘴",
-      des = "今日喵群最佳主持人",
+      name = "吧唧嘴",
+      des = "今日喵群最佳主持人、无人可挡",
       msg = 800,
       coin = 2
-    ),
-
+    )
   )
 
   val route =
@@ -314,8 +313,15 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       .map(_ => (nickName, tp2._1._2 + tp2._2.map(_.coin).sum))
                                   })
                               } else {
-                                msgLevelService.all(data.data.fromGroup.get, data.data.fromUser)
-                                  .map(i => (nickName, i.map(_.coin).sum))
+                                checkService
+                                  .all(
+                                    data.data.fromGroup.get,
+                                    data.data.fromUser
+                                  )
+                                  .zip(
+                                    msgLevelService.all(data.data.fromGroup.get, data.data.fromUser)
+                                  )
+                                  .map(tp2 => (nickName, tp2._1.length + tp2._2.map(_.coin).sum))
                               })
                             )
                         })
@@ -345,7 +351,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> (s"""💥 ${nickNameAndCoin._1.getOrElse("")} 成为${level.name} 💥\n${level.des}\n喵币奖励 +${level.coin / 10D}💰""" + "\n" + s"当前可用喵币：${(nickNameAndCoin._2 + level.coin) / 10D}💰")
+                                            "content" -> (s"""💥 恭喜${nickNameAndCoin._1.getOrElse("")}成为${level.name} 💥\n${level.des}\n喵币奖励 +${level.coin / 10D}💰""" + "\n" + s"当前可用喵币：${(nickNameAndCoin._2 + level.coin) / 10D}💰")
                                           ),
                                           Map(
                                             "Authorization" -> authorization

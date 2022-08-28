@@ -34,8 +34,8 @@ class CheckService(implicit system: ActorSystem[_]) extends EnumMappers {
 
   def check(info: CheckModel.CheckInfo): Future[(Boolean, Int)] = {
     db.run(
-        dict.filter(i => i.group === info.group && i.wxid === info.wxid).result
-      )
+      dict.filter(i => i.group === info.group && i.wxid === info.wxid).result
+    )
       .flatMap((result: Seq[CheckModel.CheckInfo]) => {
         if (result.exists(_.time == LocalDate.now())) {
           Future.successful((false, result.length))
@@ -44,6 +44,12 @@ class CheckService(implicit system: ActorSystem[_]) extends EnumMappers {
             .map(_ => (true, result.length + 1))
         }
       })
+  }
+
+  def all(group: String, wxid: String): Future[Seq[CheckModel.CheckInfo]] = {
+    db.run(
+      dict.filter(i => i.group === group && i.wxid === wxid).result
+    )
   }
 
 }
