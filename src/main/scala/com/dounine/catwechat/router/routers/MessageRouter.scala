@@ -321,7 +321,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                         })
                         .foreach(tp2 => {
                           val nickNameAndCoin = tp2._2
-                          tp2._1.find(_.time == LocalDate.now()) match {
+                          tp2._1.find(_.time == LocalDate.now() && data.data.fromUser != "wxid_lvwrpaxcrm5a22") match {
                             case Some(value) => {
                               msgLevelRequires.find(p => {
                                 value.sendMsg == p.msg
