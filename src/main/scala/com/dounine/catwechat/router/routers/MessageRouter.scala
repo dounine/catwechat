@@ -351,7 +351,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> (s"""💥 恭喜${nickNameAndCoin._1.getOrElse("")}成为${level.name} 💥\n${level.des}\n喵币奖励 +${level.coin / 10D}💰""" + "\n" + s"当前可用喵币：${(nickNameAndCoin._2 + level.coin) / 10D}💰")
+                                            "content" -> (s"""💥 恭喜${nickNameAndCoin._1.getOrElse("")}成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10D}💰""" + "\n" + s"当前可用喵币：${(nickNameAndCoin._2 + level.coin) / 10D}💰")
                                           ),
                                           Map(
                                             "Authorization" -> authorization
