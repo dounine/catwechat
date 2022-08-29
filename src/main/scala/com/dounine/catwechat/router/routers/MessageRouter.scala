@@ -302,9 +302,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           "wId" -> wId,
                                           "wcId" -> data.data.fromGroup,
                                           "content" -> (((if (tp2._1._1)
-                                            s"${nickName.getOrElse("")} 签到成功、喵币 +0.1💰"
+                                            s"${nickName.getOrElse("")} 签到成功、喵币奖励 +0.1💰"
                                           else
-                                            s"${nickName.getOrElse("")} 今日已签到、喵币 +0💰") + "\n" + s"当前可用喵币：${(tp2._1._2 + tp2._2.map(_.coin).sum) / 10D}💰") + "\n————\n每天活跃也能自动增加喵币噢\n\n喵币：可兑换下面小程序中的所有产品\nhttps://mmbizurl.cn/s/oeNYNHO4o")
+                                            s"${nickName.getOrElse("")} 已签到、喵币奖励 +0💰") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2.map(_.coin).sum) / 10D}💰") + "\n————\n每天活跃也能自动增加喵币噢\n\n喵币：可兑换下面小程序中的所有产品\nhttps://mmbizurl.cn/s/oeNYNHO4o")
                                         ),
                                         Map(
                                           "Authorization" -> authorization
@@ -351,7 +351,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> (s"""💥 恭喜${nickNameAndCoin._1.getOrElse("")}成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10D}💰""" + "\n" + s"当前可用喵币：${(nickNameAndCoin._2 + level.coin) / 10D}💰")
+                                            "content" -> (s"""💥 恭喜${nickNameAndCoin._1.getOrElse("")}成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10D}💰""" + "\n" + s"当前可用喵币 ${(nickNameAndCoin._2 + level.coin) / 10D}💰")
                                           ),
                                           Map(
                                             "Authorization" -> authorization
