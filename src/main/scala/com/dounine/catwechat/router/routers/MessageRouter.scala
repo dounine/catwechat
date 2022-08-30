@@ -112,8 +112,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
     MsgLevelModel.LevelRequire(
       level = 1,
       name = "话唠",
-      des = "你为喵群消息999数、作出的伟大贡献",
-      msg = 150,
+      des = "成为喵群消息999数的股东",
+      msg = 200,
       coin = 1
     ),
     MsgLevelModel.LevelRequire(
@@ -128,13 +128,13 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
       name = "吧唧嘴",
       des = "今日喵群最佳主持人、无人可挡",
       msg = 800,
-      coin = 2
+      coin = 1
     ),
     MsgLevelModel.LevelRequire(
       level = 4,
       name = "666",
-      des = "不知道怎么夸你了",
-      msg = 1200,
+      des = "不知道怎么夸你了、多奖励你",
+      msg = 1600,
       coin = 2
     )
   )
