@@ -101,7 +101,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
               s"<sourcedisplayname>${displayName}</sourcedisplayname>"
             )
             .replace(
-              "<sourcedisplayname>猫车群专用</sourcedisplayname>",
+              "<sourcedisplayname>养猫专用</sourcedisplayname>",
               s"<sourcedisplayname>${displayName}</sourcedisplayname>"
             )
         } else msgBody
@@ -460,9 +460,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                             Map(
                                               "wId" -> wId,
                                               "wcId" -> data.data.fromGroup,
-                                              "content" -> (s"""💥 恭喜${nickNameAndCoin._1.getOrElse(
+                                              "content" -> (s"""💥 恭喜@${nickNameAndCoin._1.getOrElse(
                                                 ""
-                                              )}成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10d}💰""" + "\n" + s"当前可用喵币 ${(nickNameAndCoin._2 + level.coin) / 10d}💰")
+                                              )} 成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10d}💰""" + "\n" + s"当前可用喵币 ${(nickNameAndCoin._2 + level.coin) / 10d}💰")
                                             ),
                                             Map(
                                               "Authorization" -> authorization
