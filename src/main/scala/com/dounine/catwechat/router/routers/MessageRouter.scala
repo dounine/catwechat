@@ -129,6 +129,13 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
       des = "今日喵群最佳主持人、无人可挡",
       msg = 800,
       coin = 2
+    ),
+    MsgLevelModel.LevelRequire(
+      level = 4,
+      name = "666",
+      des = "不知道怎么夸你了",
+      msg = 1200,
+      coin = 2
     )
   )
 
@@ -329,7 +336,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              "wId" -> wId,
                                              "wcId" -> data.data.fromGroup,
                                              "content" -> (((if (tp2._1._1)
-                                                               s"${nickName.getOrElse("")} 签到成功、喵币奖励 +0.1💰"
+                                                               s"${nickName.getOrElse("")} 签到成功、喵币奖励 +0.2💰"
                                                              else
                                                                s"${nickName.getOrElse("")} 重复签到、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2
                                                .map(_.coin)
@@ -348,39 +355,48 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                  .find(_.text == "助理，小程序")
                                              })
                                              .foreach(opt => {
-                                                if(opt.isDefined){
-                                                  val value = opt.get
-                                                  Request
-                                                    .post[String](
-                                                      s"${messageUrl}/${value.messageType}",
-                                                      Map(
-                                                        "wId" -> wId,
-                                                        "wcId" -> data.data.fromGroup
-                                                      ) ++ (value.messageType match {
-                                                        case "sendEmoji" | "sendNameCard" |
-                                                             "sendUrl" | "sendVideo" |
-                                                             "sendVoice" | "sendFile" =>
-                                                          value.sendMessage
-                                                            .split(",")
-                                                            .map(i => {
-                                                              i.split(":")
-                                                            })
-                                                            .map {
-                                                              case Array(f1, f2) => (f1, f2)
-                                                            }
-                                                            .toMap[String, String]
-                                                        case _ =>
-                                                          Map(
-                                                            "content" -> value.sendMessage.trim
-                                                          )
-                                                      }),
-                                                      Map(
-                                                        "Authorization" -> authorization
-                                                      )
-                                                    )
-                                                    .foreach(result => {
-                                                    })
-                                                }
+                                               if (opt.isDefined) {
+                                                 val value = opt.get
+                                                 Request
+                                                   .post[String](
+                                                     s"${messageUrl}/${value.messageType}",
+                                                     Map(
+                                                       "wId" -> wId,
+                                                       "wcId" -> data.data.fromGroup
+                                                     ) ++ (value.messageType match {
+                                                       case "sendEmoji" |
+                                                           "sendNameCard" |
+                                                           "sendUrl" |
+                                                           "sendVideo" |
+                                                           "sendVoice" |
+                                                           "sendFile" =>
+                                                         value.sendMessage
+                                                           .split(",")
+                                                           .map(i => {
+                                                             i.split(":")
+                                                           })
+                                                           .map {
+                                                             case Array(
+                                                                   f1,
+                                                                   f2
+                                                                 ) =>
+                                                               (f1, f2)
+                                                           }
+                                                           .toMap[
+                                                             String,
+                                                             String
+                                                           ]
+                                                       case _ =>
+                                                         Map(
+                                                           "content" -> value.sendMessage.trim
+                                                         )
+                                                     }),
+                                                     Map(
+                                                       "Authorization" -> authorization
+                                                     )
+                                                   )
+                                                   .foreach(result => {})
+                                               }
                                              })
                                            j
                                          })
@@ -406,7 +422,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                      .map(tp2 =>
                                        (
                                          nickName,
-                                         tp2._1.length + tp2._2.map(_.coin).sum
+                                         (tp2._1.length * 2) + tp2._2
+                                           .map(_.coin)
+                                           .sum
                                        )
                                      )
                                  })
@@ -415,7 +433,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           .foreach(tp2 => {
                             val nickNameAndCoin = tp2._2
                             tp2._1.find(
-                              _.time == LocalDate.now() && data.data.fromUser != "wxid_lvwrpaxcrm5a22"
+                              _.time == LocalDate
+                                .now() && data.data.fromUser != "wxid_lvwrpaxcrm5a22"
                             ) match {
                               case Some(value) => {
                                 msgLevelRequires.find(p => {
