@@ -339,7 +339,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              "Authorization" -> authorization
                                            )
                                          )
-                                         .flatMap(j => {
+                                         .map(j => {
                                            messageService
                                              .all()
                                              .map(ii => {
