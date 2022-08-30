@@ -38,7 +38,7 @@ class CheckService(implicit system: ActorSystem[_]) extends EnumMappers {
       )
       .flatMap((result: Seq[CheckModel.CheckInfo]) => {
         if (result.exists(_.time == LocalDate.now())) {
-          Future.successful((false, result.length))
+          Future.successful((false, result.length * 2))
         } else {
           insertOrUpdate(info)
             .map(_ => (true, (result.length + 1) * 2))
