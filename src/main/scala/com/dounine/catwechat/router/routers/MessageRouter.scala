@@ -607,7 +607,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
 
                           if (
                             data.data.fromUser == wcId && data.data.content
-                              .contains("喵币帐户")
+                              .contains("喵币帐号")
                           ) {
                             val consumCoin = (data.data.content
                               .split("\n")
