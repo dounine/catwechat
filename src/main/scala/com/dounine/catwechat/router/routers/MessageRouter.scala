@@ -701,6 +701,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   "wcId" -> data.data.fromGroup,
                                   "content" -> (Seq(
                                     "签到",
+                                    "喵币查询",
                                     "消息排行榜",
                                     "今天消息排行榜",
                                     "昨天消息排行榜",
