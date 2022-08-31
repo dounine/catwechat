@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Directives.{complete, _}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import com.dounine.catwechat.model.models.{
   CheckModel,
+  ConsumModel,
   MessageDing,
   MessageModel,
   MsgLevelModel,
@@ -15,6 +16,7 @@ import com.dounine.catwechat.model.models.{
 }
 import com.dounine.catwechat.service.{
   CheckService,
+  ConsumService,
   MessageService,
   MsgLevelService,
   SpeakService
@@ -42,6 +44,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   private val speakService = ServiceSingleton.get(classOf[SpeakService])
   private val checkService = ServiceSingleton.get(classOf[CheckService])
   private val msgLevelService = ServiceSingleton.get(classOf[MsgLevelService])
+  private val consumService = ServiceSingleton.get(classOf[ConsumService])
   var listenerSwitch = true
 
   implicit val ec = system.executionContext
@@ -407,6 +410,42 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                            )
                                          )
                                      })
+                                 } else if (
+                                   "喵币查询" == data.data.content && data.messageType.toInt == 80001
+                                 ) {
+                                   msgLevelService
+                                     .all(
+                                       data.data.fromGroup.get,
+                                       data.data.fromUser
+                                     )
+                                     .zip(
+                                       checkService.all(
+                                         data.data.fromGroup.get,
+                                         data.data.fromUser
+                                       )
+                                     )
+                                     .map(tp2 => {
+                                       Request
+                                         .post[String](
+                                           s"${messageUrl}/sendText",
+                                           Map(
+                                             "wId" -> wId,
+                                             "wcId" -> data.data.fromGroup,
+                                             "content" -> s"@lake 喵币余额：${(tp2._2.length * 2 + tp2._1
+                                               .map(_.coin)
+                                               .sum) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
+                                           ),
+                                           Map(
+                                             "Authorization" -> authorization
+                                           )
+                                         )
+                                       (
+                                         nickName,
+                                         tp2._2.length * 2 + tp2._1
+                                           .map(_.coin)
+                                           .sum
+                                       )
+                                     })
                                  } else {
                                    checkService
                                      .all(
@@ -460,9 +499,10 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                             Map(
                                               "wId" -> wId,
                                               "wcId" -> data.data.fromGroup,
-                                              "content" -> (s"""💥 恭喜@${nickNameAndCoin._1.getOrElse(
-                                                ""
-                                              )} 成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10d}💰""" + "\n" + s"当前可用喵币 ${(nickNameAndCoin._2 + level.coin) / 10d}💰")
+                                              "content" -> (s"""💥 恭喜@${nickNameAndCoin._1
+                                                .getOrElse(
+                                                  ""
+                                                )} 成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10d}💰""" + "\n" + s"当前可用喵币 ${(nickNameAndCoin._2 + level.coin) / 10d}💰")
                                             ),
                                             Map(
                                               "Authorization" -> authorization
@@ -564,6 +604,86 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   })
                               })
                             })
+
+                          if (
+                            data.data.fromUser == wcId && data.data.content
+                              .contains("喵币帐户")
+                          ) {
+                            val consumCoin = (data.data.content
+                              .split("\n")
+                              .head
+                              .split("-")
+                              .last
+                              .trim
+                              .toFloat * 10).toInt
+                            val consumWxid =
+                              data.data.content.split("\n").last.split("：").last.trim
+
+                            messageService
+                              .roomMembers(data.data.fromGroup.get)
+                              .map((member: MessageModel.ChatRoomMember) => {
+                                member.data
+                                  .find(
+                                    _.userName == consumWxid
+                                  )
+                                  .map(i => i.displayName.getOrElse(i.nickName))
+                              })
+                              .zip(
+                                consumService.accountCoin(
+                                  data.data.fromGroup.get,
+                                  consumWxid
+                                )
+                              )
+                              .foreach(tp2 => {
+                                val (checkCoin, msgCoin, dbConsumCoin) = tp2._2
+                                val nickName = tp2._1
+                                if (
+                                  consumCoin > (checkCoin + msgCoin - dbConsumCoin)
+                                ) {
+                                  Request
+                                    .post[String](
+                                      s"${messageUrl}/sendText",
+                                      Map(
+                                        "wId" -> wId,
+                                        "wcId" -> data.data.fromGroup,
+                                        "content" -> s"${nickName.getOrElse("")} 喵币余额不足、无法扣除\n喵币余额：${(checkCoin + msgCoin) / 10d}💰"
+                                      ),
+                                      Map(
+                                        "Authorization" -> authorization
+                                      )
+                                    )
+                                    .foreach(result => {})
+
+                                } else {
+                                  consumService
+                                    .insert(
+                                      ConsumModel.ConsumInfo(
+                                        group = data.data.fromGroup.get,
+                                        wxid = data.data.fromUser,
+                                        nickName = nickName.getOrElse(""),
+                                        coin = consumCoin,
+                                        createTime = LocalDateTime.now()
+                                      )
+                                    )
+                                    .foreach(_ => {
+                                      Request
+                                        .post[String](
+                                          s"${messageUrl}/sendText",
+                                          Map(
+                                            "wId" -> wId,
+                                            "wcId" -> data.data.fromGroup,
+                                            "content" -> s"${nickName.getOrElse("")} 喵币兑换成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰"
+                                          ),
+                                          Map(
+                                            "Authorization" -> authorization
+                                          )
+                                        )
+                                        .foreach(result => {})
+                                    })
+                                }
+                              })
+
+                          }
 
                           if (
                             "助理，关键字/助理，关键词/功能菜单/菜单功能/功能列表"

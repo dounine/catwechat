@@ -11,8 +11,8 @@ import com.dounine.catwechat.behaviors.engine.AccessTokenBehavior.InitToken
 import com.dounine.catwechat.behaviors.engine.{AccessTokenBehavior, DouyinAccountBehavior, JSApiTicketBehavior}
 import com.dounine.catwechat.model.models.MsgLevelModel.MsgLevelInfo
 import com.dounine.catwechat.model.models.{CheckModel, MessageModel, MsgLevelModel, SpeakModel, UserModel}
-import com.dounine.catwechat.service.{CheckService, DictionaryService, MessageService, MsgLevelService, OpenidStream, OrderService, OrderStream, SpeakService, UserService}
-import com.dounine.catwechat.store.{AccountTable, AkkaPersistenerJournalTable, AkkaPersistenerSnapshotTable, BreakDownTable, CheckTable, DictionaryTable, MessageTable, MsgLevelTable, OpenidTable, OrderTable, PayTable, SpeakTable, UserTable}
+import com.dounine.catwechat.service.{CheckService, ConsumService, DictionaryService, MessageService, MsgLevelService, OpenidStream, OrderService, OrderStream, SpeakService, UserService}
+import com.dounine.catwechat.store.{AccountTable, AkkaPersistenerJournalTable, AkkaPersistenerSnapshotTable, BreakDownTable, CheckTable, ConsumTable, DictionaryTable, MessageTable, MsgLevelTable, OpenidTable, OrderTable, PayTable, SpeakTable, UserTable}
 import com.dounine.catwechat.tools.akka.chrome.ChromePools
 import com.dounine.catwechat.tools.akka.db.DataSource
 import com.dounine.catwechat.tools.util.{DingDing, LockedUsers, OpenidPaySuccess, ServiceSingleton}
@@ -89,6 +89,7 @@ class Startups(implicit system: ActorSystem[_]) {
     ServiceSingleton.put(classOf[SpeakService], new SpeakService())
     ServiceSingleton.put(classOf[CheckService], new CheckService())
     ServiceSingleton.put(classOf[MsgLevelService], new MsgLevelService())
+    ServiceSingleton.put(classOf[ConsumService], new ConsumService())
     ServiceSingleton.put(
       classOf[DictionaryService],
       new DictionaryService()
@@ -111,7 +112,8 @@ class Startups(implicit system: ActorSystem[_]) {
       AkkaPersistenerSnapshotTable().schema,
       SpeakTable().schema,
       CheckTable().schema,
-      MsgLevelTable().schema
+      MsgLevelTable().schema,
+      ConsumTable().schema
     )
     SpeakTable().schema.createStatements.foreach(println)
     schemas.foreach(schema => {
