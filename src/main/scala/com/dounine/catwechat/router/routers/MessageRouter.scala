@@ -294,7 +294,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                               )
                               .map(i => i.displayName.getOrElse(i.nickName))
                           })
-                          .flatMap(nickName => {
+                          .flatMap((nickName: Option[String]) => {
                             speakService
                               .insertOrUpdate(
                                 SpeakModel.SpeakInfo(
@@ -423,7 +423,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                            Map(
                                              "wId" -> wId,
                                              "wcId" -> data.data.fromGroup,
-                                             "content" -> s"@lake 喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
+                                             "content" -> s"@${nickName.getOrElse("")} 喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
                                            ),
                                            Map(
                                              "Authorization" -> authorization
