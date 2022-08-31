@@ -631,7 +631,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       Map(
                                         "wId" -> wId,
                                         "wcId" -> data.data.fromGroup,
-                                        "content" -> s"${nickName.getOrElse("")} 喵币余额不足、无法扣除\n喵币余额：${(checkCoin + msgCoin) / 10d}💰"
+                                        "content" -> s"${nickName.getOrElse("")} 喵币余额不足、无法扣除\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin) / 10d}💰"
                                       ),
                                       Map(
                                         "Authorization" -> authorization
@@ -657,7 +657,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> s"${nickName.getOrElse("")} 喵币兑换成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰"
+                                            "content" -> s"${nickName.getOrElse("")} 喵币扣除成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰"
                                           ),
                                           Map(
                                             "Authorization" -> authorization
