@@ -423,7 +423,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                            Map(
                                              "wId" -> wId,
                                              "wcId" -> data.data.fromGroup,
-                                             "content" -> s"@lake 喵币余额：${(tp3._1 * 2 + tp3._2 - tp3._3) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
+                                             "content" -> s"@lake 喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
                                            ),
                                            Map(
                                              "Authorization" -> authorization
@@ -431,7 +431,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                          )
                                        (
                                          nickName,
-                                         tp3._1 * 2 + tp3._2 - tp3._3
+                                         tp3._1 + tp3._2 - tp3._3
                                        )
                                      })
                                  } else {
@@ -443,7 +443,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                      .map(tp3 =>
                                        (
                                          nickName,
-                                         tp3._1 * 2 + tp3._2 - tp3._3
+                                         tp3._1 + tp3._2 - tp3._3
                                        )
                                      )
                                  })
