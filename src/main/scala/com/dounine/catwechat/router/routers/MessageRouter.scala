@@ -326,8 +326,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                        )
                                      )
                                      .zip(
-                                       msgLevelService.all(
-                                         data.data.fromGroup.get,
+                                       consumService.accountCoin(
+                                         data.data.fromGroup.getOrElse(""),
                                          data.data.fromUser
                                        )
                                      )
@@ -341,9 +341,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              "content" -> (((if (tp2._1._1)
                                                                s"${nickName.getOrElse("")} 签到成功、喵币奖励 +0.2💰"
                                                              else
-                                                               s"${nickName.getOrElse("")} 重复签到、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2
-                                               .map(_.coin)
-                                               .sum) / 10d}💰") + "\n————\n每天活跃也能自动增加喵币噢\n喵币可兑换下面小程序中的所有产品")
+                                                               s"${nickName.getOrElse("")} 重复签到、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n————\n每天活跃也能自动增加喵币噢\n喵币可兑换下面小程序中的所有产品")
                                            ),
                                            Map(
                                              "Authorization" -> authorization
@@ -406,34 +404,26 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                          .map(_ =>
                                            (
                                              nickName,
-                                             tp2._1._2 + tp2._2.map(_.coin).sum
+                                             tp2._1._2 + tp2._2._2 - tp2._2._3
                                            )
                                          )
                                      })
                                  } else if (
                                    "喵币查询" == data.data.content && data.messageType.toInt == 80001
                                  ) {
-                                   msgLevelService
-                                     .all(
+                                   consumService
+                                     .accountCoin(
                                        data.data.fromGroup.get,
                                        data.data.fromUser
                                      )
-                                     .zip(
-                                       checkService.all(
-                                         data.data.fromGroup.get,
-                                         data.data.fromUser
-                                       )
-                                     )
-                                     .map(tp2 => {
+                                     .map(tp3 => {
                                        Request
                                          .post[String](
                                            s"${messageUrl}/sendText",
                                            Map(
                                              "wId" -> wId,
                                              "wcId" -> data.data.fromGroup,
-                                             "content" -> s"@lake 喵币余额：${(tp2._2.length * 2 + tp2._1
-                                               .map(_.coin)
-                                               .sum) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
+                                             "content" -> s"@lake 喵币余额：${(tp3._1 * 2 + tp3._2 - tp3._3) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
                                            ),
                                            Map(
                                              "Authorization" -> authorization
@@ -441,29 +431,19 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                          )
                                        (
                                          nickName,
-                                         tp2._2.length * 2 + tp2._1
-                                           .map(_.coin)
-                                           .sum
+                                         tp3._1 * 2 + tp3._2 - tp3._3
                                        )
                                      })
                                  } else {
-                                   checkService
-                                     .all(
+                                   consumService
+                                     .accountCoin(
                                        data.data.fromGroup.get,
                                        data.data.fromUser
                                      )
-                                     .zip(
-                                       msgLevelService.all(
-                                         data.data.fromGroup.get,
-                                         data.data.fromUser
-                                       )
-                                     )
-                                     .map(tp2 =>
+                                     .map(tp3 =>
                                        (
                                          nickName,
-                                         (tp2._1.length * 2) + tp2._2
-                                           .map(_.coin)
-                                           .sum
+                                         tp3._1 * 2 + tp3._2 - tp3._3
                                        )
                                      )
                                  })
@@ -617,7 +597,12 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                               .trim
                               .toFloat * 10).toInt
                             val consumWxid =
-                              data.data.content.split("\n").last.split("：").last.trim
+                              data.data.content
+                                .split("\n")
+                                .last
+                                .split("：")
+                                .last
+                                .trim
 
                             messageService
                               .roomMembers(data.data.fromGroup.get)
