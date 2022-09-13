@@ -682,7 +682,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     .insert(
                                       ConsumModel.ConsumInfo(
                                         group = data.data.fromGroup.get,
-                                        wxid = data.data.fromUser,
+                                        wxid = consumWxid,
                                         nickName = nickName.getOrElse(""),
                                         coin = consumCoin,
                                         createTime = LocalDateTime.now()
