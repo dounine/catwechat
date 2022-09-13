@@ -314,99 +314,136 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                 (if (
                                    "签到" == data.data.content && data.messageType.toInt == 80001
                                  ) {
-                                   checkService
-                                     .check(
-                                       CheckModel.CheckInfo(
-                                         time = LocalDate.now(),
-                                         group =
-                                           data.data.fromGroup.getOrElse(""),
-                                         wxid = data.data.fromUser,
-                                         nickName = nickName.getOrElse(""),
-                                         createTime = LocalDateTime.now()
-                                       )
+                                   consumService
+                                     .accountCoin(
+                                       data.data.fromGroup.getOrElse(""),
+                                       data.data.fromUser
                                      )
-                                     .zip(
-                                       consumService.accountCoin(
-                                         data.data.fromGroup.getOrElse(""),
-                                         data.data.fromUser
-                                       )
-                                     )
-                                     .flatMap(tp2 => {
-                                       Request
-                                         .post[String](
-                                           s"${messageUrl}/sendText",
-                                           Map(
-                                             "wId" -> wId,
-                                             "wcId" -> data.data.fromGroup,
-                                             "content" -> (((if (tp2._1._1)
-                                                               s"${nickName.getOrElse("")} 签到成功、喵币奖励 +0.2💰"
-                                                             else
-                                                               s"${nickName.getOrElse("")} 重复签到、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n————\n每天活跃也能自动增加喵币噢\n喵币可兑换下面小程序中的所有产品")
-                                           ),
-                                           Map(
-                                             "Authorization" -> authorization
+                                     .flatMap(coin => {
+                                       if ((coin._1 + coin._2 - coin._3) > 50) {
+                                         Request
+                                           .post[String](
+                                             s"${messageUrl}/sendText",
+                                             Map(
+                                               "wId" -> wId,
+                                               "wcId" -> data.data.fromGroup,
+                                               "content" -> (s"${nickName.getOrElse("")} 喵币已经封顶、请兑换后再重新签到积累" + "\n" + s"当前可用喵币 ${(coin._1 + coin._2 - coin._3) / 10d}💰" + "\n————\n喵币可兑换下面小程序中的所有产品")
+                                             ),
+                                             Map(
+                                               "Authorization" -> authorization
+                                             )
                                            )
-                                         )
-                                         .map(j => {
-                                           messageService
-                                             .all()
-                                             .map(ii => {
-                                               ii.filter(_.listen)
-                                                 .filter(_.assistant)
-                                                 .find(_.text == "助理，小程序")
-                                             })
-                                             .foreach(opt => {
-                                               if (opt.isDefined) {
-                                                 val value = opt.get
-                                                 Request
-                                                   .post[String](
-                                                     s"${messageUrl}/${value.messageType}",
-                                                     Map(
-                                                       "wId" -> wId,
-                                                       "wcId" -> data.data.fromGroup
-                                                     ) ++ (value.messageType match {
-                                                       case "sendEmoji" |
-                                                           "sendNameCard" |
-                                                           "sendUrl" |
-                                                           "sendVideo" |
-                                                           "sendVoice" |
-                                                           "sendFile" =>
-                                                         value.sendMessage
-                                                           .split(",")
-                                                           .map(i => {
-                                                             i.split(":")
-                                                           })
-                                                           .map {
-                                                             case Array(
-                                                                   f1,
-                                                                   f2
-                                                                 ) =>
-                                                               (f1, f2)
-                                                           }
-                                                           .toMap[
-                                                             String,
-                                                             String
-                                                           ]
-                                                       case _ =>
-                                                         Map(
-                                                           "content" -> value.sendMessage.trim
-                                                         )
-                                                     }),
-                                                     Map(
-                                                       "Authorization" -> authorization
-                                                     )
+                                           .map(i => {
+                                             (
+                                               nickName,
+                                               coin._1 + coin._2 - coin._3
+                                             )
+                                           })
+                                       } else {
+                                         checkService
+                                           .check(
+                                             CheckModel.CheckInfo(
+                                               time = LocalDate.now(),
+                                               group = data.data.fromGroup
+                                                 .getOrElse(""),
+                                               wxid = data.data.fromUser,
+                                               nickName =
+                                                 nickName.getOrElse(""),
+                                               createTime = LocalDateTime.now()
+                                             )
+                                           )
+                                           .map(_ -> coin)
+                                           .flatMap(
+                                             (tp2: (
+                                                 (Boolean, Int),
+                                                 (Int, Int, Int)
+                                             )) => {
+                                               Request
+                                                 .post[String](
+                                                   s"${messageUrl}/sendText",
+                                                   Map(
+                                                     "wId" -> wId,
+                                                     "wcId" -> data.data.fromGroup,
+                                                     "content" -> (((if (
+                                                                       tp2._1._1
+                                                                     )
+                                                                       s"${nickName.getOrElse("")} 签到成功、喵币奖励 +0.2💰"
+                                                                     else
+                                                                       s"${nickName.getOrElse("")} 重复签到、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n————\n每天活跃也能自动增加喵币噢\n喵币可兑换下面小程序中的所有产品")
+                                                   ),
+                                                   Map(
+                                                     "Authorization" -> authorization
                                                    )
-                                                   .foreach(result => {})
-                                               }
-                                             })
-                                           j
-                                         })
-                                         .map(_ =>
-                                           (
-                                             nickName,
-                                             tp2._1._2 + tp2._2._2 - tp2._2._3
+                                                 )
+                                                 .map(j => {
+                                                   messageService
+                                                     .all()
+                                                     .map(ii => {
+                                                       ii.filter(_.listen)
+                                                         .filter(_.assistant)
+                                                         .find(
+                                                           _.text == "助理，小程序"
+                                                         )
+                                                     })
+                                                     .foreach(opt => {
+                                                       if (opt.isDefined) {
+                                                         val value = opt.get
+                                                         Request
+                                                           .post[String](
+                                                             s"${messageUrl}/${value.messageType}",
+                                                             Map(
+                                                               "wId" -> wId,
+                                                               "wcId" -> data.data.fromGroup
+                                                             ) ++ (value.messageType match {
+                                                               case "sendEmoji" |
+                                                                   "sendNameCard" |
+                                                                   "sendUrl" |
+                                                                   "sendVideo" |
+                                                                   "sendVoice" |
+                                                                   "sendFile" =>
+                                                                 value.sendMessage
+                                                                   .split(",")
+                                                                   .map(i => {
+                                                                     i.split(
+                                                                       ":"
+                                                                     )
+                                                                   })
+                                                                   .map {
+                                                                     case Array(
+                                                                           f1,
+                                                                           f2
+                                                                         ) =>
+                                                                       (f1, f2)
+                                                                   }
+                                                                   .toMap[
+                                                                     String,
+                                                                     String
+                                                                   ]
+                                                               case _ =>
+                                                                 Map(
+                                                                   "content" -> value.sendMessage.trim
+                                                                 )
+                                                             }),
+                                                             Map(
+                                                               "Authorization" -> authorization
+                                                             )
+                                                           )
+                                                           .foreach(
+                                                             result => {}
+                                                           )
+                                                       }
+                                                     })
+                                                   j
+                                                 })
+                                                 .map(_ =>
+                                                   (
+                                                     nickName,
+                                                     tp2._1._2 + tp2._2._2 - tp2._2._3
+                                                   )
+                                                 )
+                                             }
                                            )
-                                         )
+                                       }
                                      })
                                  } else if (
                                    "喵币查询" == data.data.content && data.messageType.toInt == 80001
@@ -423,7 +460,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                            Map(
                                              "wId" -> wId,
                                              "wcId" -> data.data.fromGroup,
-                                             "content" -> s"@${nickName.getOrElse("")} 喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
+                                             "content" -> s"@${nickName
+                                               .getOrElse("")} 喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰\n喵币帐号：${data.data.fromUser}".stripMargin
                                            ),
                                            Map(
                                              "Authorization" -> authorization
@@ -657,7 +695,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> s"${nickName.getOrElse("")} 喵币-${consumCoin/10D}成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰"
+                                            "content" -> s"${nickName
+                                              .getOrElse("")} 喵币-${consumCoin / 10d}成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰"
                                           ),
                                           Map(
                                             "Authorization" -> authorization
