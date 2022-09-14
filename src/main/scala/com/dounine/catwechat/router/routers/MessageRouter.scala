@@ -595,6 +595,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     }
                                     no + s"${tp._1.nickName}"
                                   })
+                                  .take(3)
 
                                 Request
                                   .post[String](
