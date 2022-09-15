@@ -320,7 +320,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                        data.data.fromUser
                                      )
                                      .flatMap(coin => {
-                                       if ((coin._1 + coin._2 - coin._3) > 50) {
+                                       if ((coin._1 + coin._2 - coin._3) >= 50) {
                                          Request
                                            .post[String](
                                              s"${messageUrl}/sendText",
