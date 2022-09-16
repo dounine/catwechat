@@ -369,7 +369,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                                      )
                                                                        s"${nickName.getOrElse("")} 签到成功、喵币奖励 +0.2💰"
                                                                      else
-                                                                       s"${nickName.getOrElse("")} 重复签到、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n————\n每天活跃也能自动增加喵币噢\n喵币可兑换下面小程序中的所有产品")
+                                                                       s"${nickName.getOrElse("")} 重复签到、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n————\n还可以通过每天群里掉落喵币获得\n喵币可兑换下面小程序中的所有产品")
                                                    ),
                                                    Map(
                                                      "Authorization" -> authorization
@@ -494,43 +494,43 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                 .now() && data.data.fromUser != "wxid_lvwrpaxcrm5a22"
                             ) match {
                               case Some(value) => {
-                                msgLevelRequires.find(p => {
-                                  value.sendMsg == p.msg
-                                }) match {
-                                  case Some(level) => {
-                                    msgLevelService
-                                      .insertOrUpdate(
-                                        MsgLevelModel.MsgLevelInfo(
-                                          time = LocalDate.now(),
-                                          group = value.group,
-                                          wxid = value.wxid,
-                                          nickName = value.nickName,
-                                          coin = level.coin,
-                                          level = level.coin,
-                                          createTime = LocalDateTime.now()
-                                        )
-                                      )
-                                      .flatMap(_ => {
-                                        Request
-                                          .post[String](
-                                            s"${messageUrl}/sendText",
-                                            Map(
-                                              "wId" -> wId,
-                                              "wcId" -> data.data.fromGroup,
-                                              "content" -> (s"""💥 恭喜@${nickNameAndCoin._1
-                                                .getOrElse(
-                                                  ""
-                                                )} 成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10d}💰""" + "\n" + s"当前可用喵币 ${(nickNameAndCoin._2 + level.coin) / 10d}💰")
-                                            ),
-                                            Map(
-                                              "Authorization" -> authorization
-                                            )
-                                          )
-                                      })
-                                      .foreach(result => {})
-                                  }
-                                  case None =>
-                                }
+//                                msgLevelRequires.find(p => {
+//                                  value.sendMsg == p.msg
+//                                }) match {
+//                                  case Some(level) => {
+//                                    msgLevelService
+//                                      .insertOrUpdate(
+//                                        MsgLevelModel.MsgLevelInfo(
+//                                          time = LocalDate.now(),
+//                                          group = value.group,
+//                                          wxid = value.wxid,
+//                                          nickName = value.nickName,
+//                                          coin = level.coin,
+//                                          level = level.coin,
+//                                          createTime = LocalDateTime.now()
+//                                        )
+//                                      )
+//                                      .flatMap(_ => {
+//                                        Request
+//                                          .post[String](
+//                                            s"${messageUrl}/sendText",
+//                                            Map(
+//                                              "wId" -> wId,
+//                                              "wcId" -> data.data.fromGroup,
+//                                              "content" -> (s"""💥 恭喜@${nickNameAndCoin._1
+//                                                .getOrElse(
+//                                                  ""
+//                                                )} 成为${level.name} 💥\n${level.des}\n喵币额外奖励 +${level.coin / 10d}💰""" + "\n" + s"当前可用喵币 ${(nickNameAndCoin._2 + level.coin) / 10d}💰")
+//                                            ),
+//                                            Map(
+//                                              "Authorization" -> authorization
+//                                            )
+//                                          )
+//                                      })
+//                                      .foreach(result => {})
+//                                  }
+//                                  case None =>
+//                                }
                               }
                               case None =>
                             }
