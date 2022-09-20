@@ -320,7 +320,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                        data.data.fromUser
                                      )
                                      .flatMap(coin => {
-                                       if ((coin._1 + coin._2 - coin._3) >= 50) {
+                                       if (
+                                         (coin._1 + coin._2 - coin._3) >= 50
+                                       ) {
                                          Request
                                            .post[String](
                                              s"${messageUrl}/sendText",
@@ -446,7 +448,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                        }
                                      })
                                  } else if (
-                                   "喵币查询" == data.data.content && data.messageType.toInt == 80001
+                                   Array("喵币查询", "查询喵币", "喵币", "喵币余额").contains(
+                                     data.data.content
+                                   ) && data.messageType.toInt == 80001
                                  ) {
                                    consumService
                                      .accountCoin(
