@@ -331,7 +331,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              Map(
                                                "wId" -> wId,
                                                "wcId" -> data.data.fromGroup,
-                                               "content" -> (s"${nickName.getOrElse("")} 喵币已经达上限、请兑换后再重新${data.data.content}积累" + "\n" + s"当前可用喵币 ${(coin._1 + coin._2 - coin._3) / 10d}💰")
+                                               "content" -> (s"「${nickName.getOrElse("")} 喵币已经达上限、请兑换后再重新${data.data.content}积累」" + "\n- - - - - - - - - - -\n" + s"当前可用喵币 ${(coin._1 + coin._2 - coin._3) / 10d}💰")
                                              ),
                                              Map(
                                                "Authorization" -> authorization
@@ -371,9 +371,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                      "content" -> (((if (
                                                                        tp2._1._1
                                                                      )
-                                                                       s"${nickName.getOrElse("")} ${data.data.content}成功、喵币奖励 +0.2💰"
+                                                                       s"「${nickName.getOrElse("")} ${data.data.content}成功、喵币奖励 +0.2💰」"
                                                                      else
-                                                                       s"${nickName.getOrElse("")} 重复${data.data.content}、喵币无奖励") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n————\n喵币可兑换下面小程序中的所有产品")
+                                                                       s"「${nickName.getOrElse("")} 重复${data.data.content}、喵币无奖励」") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n- - - - - - - - - - -\n喵币可兑换下面小程序中的所有产品")
                                                    ),
                                                    Map(
                                                      "Authorization" -> authorization
@@ -702,8 +702,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           Map(
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
-                                            "content" -> s"${nickName
-                                              .getOrElse("")} 喵币-${consumCoin / 10d}扣除成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰\n小程序产品提交不要付款、等待群主改价即可"
+                                            "content" -> s"「${nickName
+                                              .getOrElse("")} 喵币-${consumCoin / 10d}扣除成功」\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰\n- - - - - - - - - - -\n小程序产品提交不要付款、等待群主改价即可"
                                           ),
                                           Map(
                                             "Authorization" -> authorization
