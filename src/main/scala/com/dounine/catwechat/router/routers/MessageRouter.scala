@@ -304,7 +304,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   nickName = nickName.getOrElse(""),
                                   sendMsg =
                                     (if (
-                                       "签到" == data.data.content && data.messageType.toInt == 80001
+                                       Array("签到","摸鱼").contains(data.data.content) && data.messageType.toInt == 80001
                                      ) 0
                                      else 1),
                                   createTime = LocalDateTime.now()
@@ -703,7 +703,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                             "wId" -> wId,
                                             "wcId" -> data.data.fromGroup,
                                             "content" -> s"${nickName
-                                              .getOrElse("")} 喵币-${consumCoin / 10d}成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰"
+                                              .getOrElse("")} 喵币-${consumCoin / 10d}扣除成功\n喵币余额：${(checkCoin + msgCoin - dbConsumCoin - consumCoin) / 10d}💰\n小程序产品提交不要付款、等待群主改价即可"
                                           ),
                                           Map(
                                             "Authorization" -> authorization
