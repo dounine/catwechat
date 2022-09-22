@@ -47,17 +47,4 @@ class MsgLevelTable(tag: Tag)
     column[LocalDateTime]("createTime", O.SqlType(timestampOnUpdate))(
       localDateTime2timestamp
     )
-
-  def pk =
-    primaryKey(
-      "wechat_listener_msg_level_pk",
-      (time, wxid, level)
-    )
-
-  def idx_time_group =
-    index(
-      "wechat_listener_msg_level_time_group_uindx",
-      (time, wxid),
-      unique = false
-    )
 }
