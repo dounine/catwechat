@@ -49,8 +49,9 @@ class MsgLevelTable(tag: Tag)
     )
 
   def sortWxid =
-    primaryKey(
+    index(
       "wechat_listener_msg_level_wxid",
-      wxid
+      wxid,
+      false
     )
 }

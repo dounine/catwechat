@@ -191,10 +191,10 @@ class Startups(implicit system: ActorSystem[_]) {
         createTime = LocalDateTime.now()
       )
     ).foreach(info => {
-      Await.result(
-        ServiceSingleton.get(classOf[MsgLevelService]).insertOrUpdate(info),
-        Duration.Inf
-      )
+//      Await.result(
+//        ServiceSingleton.get(classOf[MsgLevelService]).insertOrUpdate(info),
+//        Duration.Inf
+//      )
     })
 
     Array(

@@ -1,38 +1,19 @@
 package com.dounine.catwechat.router.routers
 
+import akka.actor.Cancellable
 import akka.actor.typed.ActorSystem
 import akka.cluster.{Cluster, MemberStatus}
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, _}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
-import com.dounine.catwechat.model.models.{
-  CheckModel,
-  ConsumModel,
-  MessageDing,
-  MessageModel,
-  MsgLevelModel,
-  RouterModel,
-  SpeakModel
-}
-import com.dounine.catwechat.service.{
-  CheckService,
-  ConsumService,
-  MessageService,
-  MsgLevelService,
-  SpeakService
-}
+import com.dounine.catwechat.model.models.MsgLevelModel.CoinUserInfo
+import com.dounine.catwechat.model.models.{CheckModel, ConsumModel, MessageDing, MessageModel, MsgLevelModel, RouterModel, SpeakModel}
+import com.dounine.catwechat.service.{CheckService, ConsumService, MessageService, MsgLevelService, SpeakService}
 import com.dounine.catwechat.tools.util.DingDing.MessageData
-import com.dounine.catwechat.tools.util.{
-  DingDing,
-  IpUtils,
-  LikeUtil,
-  Request,
-  ServiceSingleton,
-  UUIDUtil
-}
+import com.dounine.catwechat.tools.util.{DingDing, IpUtils, LikeUtil, Request, ServiceSingleton, UUIDUtil}
 import org.slf4j.LoggerFactory
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.concurrent
 import scala.concurrent.{Await, Future, duration}
 import scala.concurrent.duration._
@@ -61,7 +42,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   val displayName = system.settings.config.getString("app.displayName") //测试群名
   val wcId = system.settings.config.getString("app.wcId") //群主微信
   val authorization = system.settings.config.getString("app.authorization")
-  var charts = Await.result(
+  var charts: Seq[MessageModel.ContactData] = Await.result(
     messageService
       .initAddress()
       .flatMap(_ => {
@@ -72,6 +53,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
       }),
     Duration.Inf
   )
+
+  type GroupId = String
+  var coinMaps: Map[GroupId, MsgLevelModel.CoinInfo] = Map[GroupId, MsgLevelModel.CoinInfo]()
 
   Request
     .post[String](
@@ -142,6 +126,23 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
     )
   )
 
+  def sendText(wcId:String,content:String): Unit ={
+    Request
+      .post[String](
+        s"${messageUrl}/sendText",
+        Map(
+          "wId" -> wId,
+          "wcId" -> wcId,
+          "content" ->content
+        ),
+        Map(
+          "Authorization" -> authorization
+        )
+      )
+      .foreach(result => {
+      })
+  }
+
   val route =
     cors() {
       concat(
@@ -151,6 +152,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
               .queryById(id)
               .map(result => RouterModel.Data(Option(result)))
             complete(result)
+          } ~ path("coin" / "down"){
+            ok(charts)
           } ~ path("infos") {
             val result = messageService
               .all()
@@ -168,7 +171,39 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
           }
         },
         post {
-          path("listen" / Segment) {
+          path("coin" / "down"){
+            entity(as[MsgLevelModel.DownInfo]) {
+              data => {
+                val des = data.des match {
+                  case Some(value) => value
+                  case None => "掉落"
+                }
+                sendText(
+                  data.groupId,
+                  s"""
+                     |北京时间${LocalTime.now()}、${des}${data.coin/10D}喵币
+                     |获取方法：发送【 捡 】、或者【 抢 】关键字
+                     |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
+                     |规则一：3秒内捡到的人没人抢可归第一个捡到的人所有
+                     |规则二：如果发生争抢、归5秒内最后抢到的一个人所有
+                     |规则三：这是博弈游戏、每人单次仅可以发送一次抢或捡
+                     |""".stripMargin
+                )
+                coinMaps += data.groupId -> MsgLevelModel.CoinInfo(
+                  coin = data.coin,
+                  createTime = LocalDateTime.now(),
+                  settle = false,
+                  result = None,
+                  isPick = true,
+                  pick = None,
+                  pickSchedule = None,
+                  robs = Array.empty,
+                  robSchedule = None
+                )
+                ok
+              }
+            }
+          } ~path("listen" / Segment) {
             listen =>
               listenerSwitch = listen.toBoolean
               if (listenerSwitch) {
@@ -304,7 +339,9 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   nickName = nickName.getOrElse(""),
                                   sendMsg =
                                     (if (
-                                       Array("签到","摸鱼").contains(data.data.content) && data.messageType.toInt == 80001
+                                       Array("签到", "摸鱼").contains(
+                                         data.data.content
+                                       ) && data.messageType.toInt == 80001
                                      ) 0
                                      else 1),
                                   createTime = LocalDateTime.now()
@@ -538,6 +575,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           })
                       case None =>
                     }
+
                     if (data.messageType.toInt == 80001 && listenerSwitch) {
                       charts.find(item =>
                         data.data.fromGroup.contains(
@@ -624,6 +662,148 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   })
                               })
                             })
+
+                          if(Array("捡","抢").contains(data.data.content)){
+                            val userId = data.data.fromUser
+                            val groupId = data.data.fromGroup.get
+                            messageService
+                              .roomMembers(groupId)
+                              .map((member: MessageModel.ChatRoomMember) => {
+                                member.data
+                                  .find(
+                                    _.userName == data.data.fromUser
+                                  )
+                                  .map(i => i.displayName.getOrElse(i.nickName))
+                              }).foreach(nickName=>{
+                                coinMaps.get(groupId) match {
+                                  case Some(info: MsgLevelModel.CoinInfo) =>
+                                  {
+                                    if(info.settle){
+                                      sendText(
+                                        data.data.fromGroup.get,
+                                        s"""
+                                           |喵币${info.coin/10D}、已经被${info.result.get.nickName}${if(info.isPick) "捡" else "抢"}到了
+                                           |- - - - - - - - - - -
+                                           |请继续挣大眼睛看下一次的喵币的掉落
+                                           |""".stripMargin
+                                      )
+                                    }else if(data.data.content=="捡"){
+                                      info.pick match {
+                                        case Some(pickInfo) => {
+                                          sendText(
+                                            groupId,
+                                            s"""
+                                               |喵币${info.coin/10D}、被${pickInfo.nickName}捡到了、你还有时间抢过来
+                                               |""".stripMargin
+                                          )
+                                        }
+                                        case None => {
+                                          sendText(
+                                            groupId,
+                                            s"""
+                                               |喵币${info.coin/10D}、被${nickName.get}捡到了、5秒内无人抢即可归你所有
+                                               |""".stripMargin
+                                          )
+                                          coinMaps += data.data.fromGroup.get -> info.copy(
+                                            pick = Some(MsgLevelModel.CoinUserInfo(
+                                                nickName = nickName.get,
+                                                wxid = data.data.fromUser
+                                            )),
+                                            pickSchedule = if(info.pickSchedule.isDefined) info.pickSchedule else {
+                                              Some(system.scheduler.scheduleOnce(5000.milliseconds, () => {
+                                                var latestInfo = coinMaps(groupId)
+                                                coinMaps +=  groupId -> latestInfo.copy(
+                                                  result = latestInfo.pick,
+                                                  settle = true,
+                                                  isPick = true
+                                                )
+                                                latestInfo = coinMaps(groupId)
+
+                                                sendText(
+                                                  groupId,
+                                                  s"""
+                                                     |恭喜${latestInfo.result.get.nickName}、喵币${latestInfo.coin/10D}是你的了
+                                                     |""".stripMargin
+                                                )
+
+                                                msgLevelService.insertOrUpdate(MsgLevelModel.MsgLevelInfo(
+                                                  time = LocalDate.now(),
+                                                  wxid = userId,
+                                                  nickName = latestInfo.result.get.nickName,
+                                                  level = 1,
+                                                  coin = latestInfo.coin,
+                                                  createTime = LocalDateTime.now()
+                                                ))
+                                                  .foreach(println(_))
+                                              }))
+                                            }
+                                          )
+                                        }
+                                      }
+                                    } else if(data.data.content=="抢"){
+                                      info.pick match {
+                                        case Some(value) => {
+                                          info.pickSchedule.foreach(_.cancel())
+                                          coinMaps += groupId -> info.copy(
+                                            robs = if(info.robs.exists(_.wxid==userId)) info.robs else info.robs ++ Array(MsgLevelModel.CoinUserInfo(
+                                              nickName = nickName.get,
+                                              wxid = data.data.fromUser
+                                            )),
+                                            robSchedule = if(info.robSchedule.isDefined) info.robSchedule else {
+                                              Some(system.scheduler.scheduleOnce(8000.milliseconds, () => {
+                                                var latestInfo = coinMaps(groupId)
+                                                coinMaps +=  groupId -> latestInfo.copy(
+                                                  result = Some(
+                                                    if(latestInfo.robs.isEmpty) {
+                                                      latestInfo.pick.get
+                                                    }else{
+                                                      latestInfo.robs.last
+                                                    }
+                                                  ),
+                                                  settle = true,
+                                                  isPick = latestInfo.robs.isEmpty
+                                                )
+                                                latestInfo = coinMaps(groupId)
+
+                                                sendText(
+                                                  groupId,
+                                                  s"""
+                                                     |恭喜${latestInfo.result.get.nickName}、喵币${latestInfo.coin/10D}是你的了
+                                                     |""".stripMargin
+                                                )
+
+                                                msgLevelService.insertOrUpdate(MsgLevelModel.MsgLevelInfo(
+                                                  time = LocalDate.now(),
+                                                  wxid = userId,
+                                                  nickName = latestInfo.result.get.nickName,
+                                                  level = 0,
+                                                  coin = latestInfo.coin,
+                                                  createTime = LocalDateTime.now()
+                                                ))
+                                                  .foreach(println(_))
+                                              }))
+                                            }
+                                          )
+                                        }
+                                        case None => sendText(
+                                          groupId,
+                                          s"""
+                                             |喵币${info.coin/10D}、还没人捡呢、没法抢过来
+                                             |""".stripMargin
+                                        )
+                                      }
+                                    }
+                                  }
+                                  case None =>
+                                    sendText(
+                                      groupId,
+                                      s"""
+                                         |没有喵币可${data.data.content}
+                                         |""".stripMargin
+                                    )
+                                }
+                            })
+                          }
 
                           if (
                             data.data.fromUser == wcId && data.data.content

@@ -23,12 +23,7 @@ class MsgLevelService(implicit system: ActorSystem[_]) extends EnumMappers {
     SlickSession.forDbAndProfile(db, slick.jdbc.MySQLProfile)
 
   def insertOrUpdate(info: MsgLevelModel.MsgLevelInfo): Future[Int] =
-    db.run(
-      sqlu"""INSERT INTO wechat_listener_msg_level(time,wxid,level,nickName,coin) VALUE(${
-        info.time
-          .toString()
-      },${info.wxid},${info.level},${info.nickName},${info.coin}) ON DUPLICATE KEY UPDATE coin=${info.coin},nickName=${info.nickName}"""
-    )
+    db.run(dict+=info)
 
   def all(wxid: String): Future[Seq[MsgLevelModel.MsgLevelInfo]] = {
     db.run(
