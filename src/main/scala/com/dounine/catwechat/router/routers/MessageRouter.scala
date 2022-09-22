@@ -181,7 +181,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                 sendText(
                   data.groupId,
                   s"""
-                     |北京时间${LocalTime.now()}、${des}${data.coin/10D}喵币
+                     |北京时间${LocalTime.now()}、${des}${data.coin/10D} 💰喵币
                      |获取方法：发送【 捡 】、或者【 抢 】关键字
                      |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
                      |规则一：5秒内捡到的人没人抢可归第一个捡到的人所有
