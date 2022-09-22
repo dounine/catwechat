@@ -47,4 +47,10 @@ class MsgLevelTable(tag: Tag)
     column[LocalDateTime]("createTime", O.SqlType(timestampOnUpdate))(
       localDateTime2timestamp
     )
+
+  def sortWxid =
+    primaryKey(
+      "wechat_listener_msg_level_wxid",
+      wxid
+    )
 }
