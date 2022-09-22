@@ -682,7 +682,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       sendText(
                                         data.data.fromGroup.get,
                                         s"""
-                                           |喵币${info.coin/10D}、已经被${info.result.get.nickName}${if(info.isPick) "捡" else "抢"}到了
+                                           |喵币${info.coin/10D} 💰、已经被${info.result.get.nickName}${if(info.isPick) "捡" else "抢"}到了
                                            |- - - - - - - - - - -
                                            |请继续挣大眼睛看下一次的喵币的掉落
                                            |""".stripMargin
@@ -693,7 +693,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           sendText(
                                             groupId,
                                             s"""
-                                               |喵币${info.coin/10D}、被${pickInfo.nickName}捡到了、你还有时间抢过来
+                                               |喵币${info.coin/10D} 💰、被${pickInfo.nickName}捡到了、你还有时间抢过来
                                                |""".stripMargin
                                           )
                                         }
@@ -701,7 +701,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           sendText(
                                             groupId,
                                             s"""
-                                               |喵币${info.coin/10D}、已经被${nickName.get}捡到了、下次再来吧
+                                               |喵币${info.coin/10D} 💰、已经被${nickName.get}捡走了、下次再来吧
                                                |""".stripMargin
                                           )
                                           coinMaps += data.data.fromGroup.get -> info.copy(
@@ -805,7 +805,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                         case None => sendText(
                                           groupId,
                                           s"""
-                                             |喵币${info.coin/10D}、还没人捡呢、没法抢过来
+                                             |喵币${info.coin/10D} 💰、还没人捡呢、没法抢过来
                                              |""".stripMargin
                                         )
                                       }
@@ -815,7 +815,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     sendText(
                                       groupId,
                                       s"""
-                                         |没有喵币可${data.data.content}
+                                         |没有喵币💰可${data.data.content}
                                          |""".stripMargin
                                     )
                                 }
