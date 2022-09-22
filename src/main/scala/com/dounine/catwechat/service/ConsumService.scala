@@ -30,20 +30,19 @@ class ConsumService(implicit system: ActorSystem[_]) extends EnumMappers {
     )
 
   def all(
-      group: String,
       wxid: String
   ): Future[Seq[ConsumModel.ConsumInfo]] = {
     db.run(
-      dict.filter(i => i.group === group && i.wxid === wxid).result
+      dict.filter(i => i.wxid === wxid).result
     )
   }
 
-  def accountCoin(group: String, wxid: String): Future[(Int, Int, Int)] = {
+  def accountCoin(wxid: String): Future[(Int, Int, Int)] = {
     checkService
-      .all(group, wxid)
-      .zip(msgLevelService.all(group, wxid))
+      .all(wxid)
+      .zip(msgLevelService.all(wxid))
       .flatMap(tp2 => {
-        all(group, wxid)
+        all(wxid)
           .map(i => {
             //签到 + 聊天奖励 - 消费 = 余额
             (tp2._1.length * 2, tp2._2.map(_.coin).sum, i.map(_.coin).sum)

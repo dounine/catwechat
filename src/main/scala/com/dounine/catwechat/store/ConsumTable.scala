@@ -18,15 +18,11 @@ class ConsumTable(tag: Tag)
 
   override def * : ProvenShape[ConsumModel.ConsumInfo] =
     (
-      group,
       wxid,
       nickName,
       coin,
       createTime
     ).mapTo[ConsumModel.ConsumInfo]
-
-  def group: Rep[String] =
-    column[String]("group", O.Length(50))
 
   def wxid: Rep[String] =
     column[String]("wxid", O.Length(50))
@@ -45,7 +41,7 @@ class ConsumTable(tag: Tag)
   def idx_consum_group =
     index(
       "wechat_listener_consum_group_wxid_uindx",
-      (group, wxid),
+      ( wxid),
       unique = false
     )
 }

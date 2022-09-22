@@ -6,7 +6,6 @@ object MsgLevelModel {
 
   case class MsgLevelInfo(
                            time: LocalDate,
-                           group: String,
                            wxid: String,
                            nickName: String,
                            level: Int,

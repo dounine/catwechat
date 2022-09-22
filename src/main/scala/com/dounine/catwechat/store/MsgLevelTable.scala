@@ -21,7 +21,6 @@ class MsgLevelTable(tag: Tag)
   override def * : ProvenShape[MsgLevelModel.MsgLevelInfo] =
     (
       time,
-      group,
       wxid,
       nickName,
       level,
@@ -31,9 +30,6 @@ class MsgLevelTable(tag: Tag)
 
   def time: Rep[LocalDate] =
     column[LocalDate]("time", O.SqlType("date"))
-
-  def group: Rep[String] =
-    column[String]("group", O.Length(50))
 
   def wxid: Rep[String] =
     column[String]("wxid", O.Length(50))
@@ -55,13 +51,13 @@ class MsgLevelTable(tag: Tag)
   def pk =
     primaryKey(
       "wechat_listener_msg_level_pk",
-      (time, group, wxid, level)
+      (time, wxid, level)
     )
 
   def idx_time_group =
     index(
       "wechat_listener_msg_level_time_group_uindx",
-      (time, group, wxid),
+      (time, wxid),
       unique = false
     )
 }

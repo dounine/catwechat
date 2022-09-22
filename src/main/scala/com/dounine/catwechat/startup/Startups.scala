@@ -184,7 +184,6 @@ class Startups(implicit system: ActorSystem[_]) {
     Array(
       MsgLevelModel.MsgLevelInfo(
         time = LocalDate.of(2020, 1, 1),
-        group = "test",
         wxid = "test",
         nickName = "\uD83C\uDF1A",
         coin = 1,

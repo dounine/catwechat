@@ -6,7 +6,6 @@ object CheckModel {
 
   case class CheckInfo(
       time: LocalDate,
-      group: String,
       wxid: String,
       nickName: String = "",
       createTime: LocalDateTime

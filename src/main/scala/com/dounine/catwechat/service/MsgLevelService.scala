@@ -24,15 +24,15 @@ class MsgLevelService(implicit system: ActorSystem[_]) extends EnumMappers {
 
   def insertOrUpdate(info: MsgLevelModel.MsgLevelInfo): Future[Int] =
     db.run(
-      sqlu"""INSERT INTO wechat_listener_msg_level(time,`group`,wxid,level,nickName,coin) VALUE(${
+      sqlu"""INSERT INTO wechat_listener_msg_level(time,wxid,level,nickName,coin) VALUE(${
         info.time
           .toString()
-      },${info.group},${info.wxid},${info.level},${info.nickName},${info.coin}) ON DUPLICATE KEY UPDATE coin=${info.coin},nickName=${info.nickName}"""
+      },${info.wxid},${info.level},${info.nickName},${info.coin}) ON DUPLICATE KEY UPDATE coin=${info.coin},nickName=${info.nickName}"""
     )
 
-  def all(group: String, wxid: String): Future[Seq[MsgLevelModel.MsgLevelInfo]] = {
+  def all(wxid: String): Future[Seq[MsgLevelModel.MsgLevelInfo]] = {
     db.run(
-      dict.filter(i => i.group === group && i.wxid === wxid).result
+      dict.filter(i => i.wxid === wxid).result
     )
   }
 

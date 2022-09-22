@@ -318,7 +318,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                  ) {
                                    consumService
                                      .accountCoin(
-                                       data.data.fromGroup.getOrElse(""),
                                        data.data.fromUser
                                      )
                                      .flatMap(coin => {
@@ -348,8 +347,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                            .check(
                                              CheckModel.CheckInfo(
                                                time = LocalDate.now(),
-                                               group = data.data.fromGroup
-                                                 .getOrElse(""),
                                                wxid = data.data.fromUser,
                                                nickName =
                                                  nickName.getOrElse(""),
@@ -456,7 +453,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                  ) {
                                    consumService
                                      .accountCoin(
-                                       data.data.fromGroup.get,
                                        data.data.fromUser
                                      )
                                      .map(tp3 => {
@@ -481,7 +477,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                  } else {
                                    consumService
                                      .accountCoin(
-                                       data.data.fromGroup.get,
                                        data.data.fromUser
                                      )
                                      .map(tp3 =>
@@ -660,7 +655,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                               })
                               .zip(
                                 consumService.accountCoin(
-                                  data.data.fromGroup.get,
                                   consumWxid
                                 )
                               )
@@ -688,7 +682,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   consumService
                                     .insert(
                                       ConsumModel.ConsumInfo(
-                                        group = data.data.fromGroup.get,
                                         wxid = consumWxid,
                                         nickName = nickName.getOrElse(""),
                                         coin = consumCoin,

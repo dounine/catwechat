@@ -20,7 +20,6 @@ class CheckTable(tag: Tag)
   override def * : ProvenShape[CheckModel.CheckInfo] =
     (
       time,
-      group,
       wxid,
       nickName,
       createTime
@@ -28,9 +27,6 @@ class CheckTable(tag: Tag)
 
   def time: Rep[LocalDate] =
     column[LocalDate]("date", O.SqlType("date"))(localDate2Date)
-
-  def group: Rep[String] =
-    column[String]("group", O.Length(50))
 
   def wxid: Rep[String] =
     column[String]("wxid", O.Length(50))
@@ -46,13 +42,6 @@ class CheckTable(tag: Tag)
   def pk =
     primaryKey(
       "wechat_listener_check_pk",
-      (time, group, wxid)
-    )
-
-  def idx_date_group =
-    index(
-      "wechat_listener_check_time_group_uindx",
-      (time, group),
-      unique = false
+      (time, wxid)
     )
 }
