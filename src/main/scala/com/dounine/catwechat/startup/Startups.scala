@@ -200,7 +200,6 @@ class Startups(implicit system: ActorSystem[_]) {
     Array(
       CheckModel.CheckInfo(
         time = LocalDate.of(2020, 1, 1),
-        group = "test",
         wxid = "test",
         nickName = "test",
         createTime = LocalDateTime.now()
