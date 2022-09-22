@@ -702,7 +702,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           sendText(
                                             groupId,
                                             s"""
-                                               |喵币${info.coin/10D} 💰、已经被${nickName.get}捡走了、下次再来吧
+                                               |喵币${info.coin/10D} 💰、被${nickName.get}捡了、没人抢可就归我了
                                                |""".stripMargin
                                           )
                                           coinMaps += data.data.fromGroup.get -> info.copy(
@@ -806,7 +806,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                         case None => sendText(
                                           groupId,
                                           s"""
-                                             |喵币${info.coin/10D} 💰、还没人捡呢、没法抢过来
+                                             |喵币${info.coin/10D} 💰、还没人捡呢、不能抢过来
                                              |""".stripMargin
                                         )
                                       }
@@ -816,7 +816,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     sendText(
                                       groupId,
                                       s"""
-                                         |没有喵币💰可${data.data.content}
+                                         |目前没有喵币💰可${data.data.content}
                                          |""".stripMargin
                                     )
                                 }
