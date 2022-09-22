@@ -701,7 +701,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           sendText(
                                             groupId,
                                             s"""
-                                               |喵币${info.coin/10D}、被${nickName.get}捡到了、5秒内无人抢即可归你所有
+                                               |喵币${info.coin/10D}、已经被${nickName.get}捡到了、下次再来吧
                                                |""".stripMargin
                                           )
                                           coinMaps += data.data.fromGroup.get -> info.copy(
@@ -719,22 +719,31 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                 )
                                                 latestInfo = coinMaps(groupId)
 
-                                                sendText(
-                                                  groupId,
-                                                  s"""
-                                                     |恭喜${latestInfo.result.get.nickName}、喵币${latestInfo.coin/10D}是你的了
-                                                     |""".stripMargin
-                                                )
-
                                                 msgLevelService.insertOrUpdate(MsgLevelModel.MsgLevelInfo(
                                                   time = LocalDate.now(),
                                                   wxid = userId,
                                                   nickName = latestInfo.result.get.nickName,
-                                                  level = 1,
+                                                  level = 0,
                                                   coin = latestInfo.coin,
                                                   createTime = LocalDateTime.now()
                                                 ))
-                                                  .foreach(println(_))
+                                                  .foreach(_=>{
+                                                    consumService
+                                                      .accountCoin(
+                                                        data.data.fromUser
+                                                      )
+                                                      .foreach(tp3=>{
+                                                        sendText(
+                                                          groupId,
+                                                          s"""
+                                                             |💥 恭喜${latestInfo.result.get.nickName}、掉落的喵币${latestInfo.coin/10D}是你的了 💥
+                                                             |- - - - - - - - - - -
+                                                             |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
+                                                             |""".stripMargin
+                                                        )
+                                                      })
+                                                  })
+
                                               }))
                                             }
                                           )
@@ -765,13 +774,6 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                 )
                                                 latestInfo = coinMaps(groupId)
 
-                                                sendText(
-                                                  groupId,
-                                                  s"""
-                                                     |恭喜${latestInfo.result.get.nickName}、喵币${latestInfo.coin/10D}是你的了
-                                                     |""".stripMargin
-                                                )
-
                                                 msgLevelService.insertOrUpdate(MsgLevelModel.MsgLevelInfo(
                                                   time = LocalDate.now(),
                                                   wxid = userId,
@@ -780,7 +782,22 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                   coin = latestInfo.coin,
                                                   createTime = LocalDateTime.now()
                                                 ))
-                                                  .foreach(println(_))
+                                                  .foreach(_=>{
+                                                    consumService
+                                                      .accountCoin(
+                                                        data.data.fromUser
+                                                      )
+                                                      .foreach(tp3=>{
+                                                        sendText(
+                                                          groupId,
+                                                          s"""
+                                                             |💥 恭喜${latestInfo.result.get.nickName}、掉落的喵币${latestInfo.coin/10D}是你的了 💥
+                                                             |- - - - - - - - - - -
+                                                             |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
+                                                             |""".stripMargin
+                                                        )
+                                                      })
+                                                  })
                                               }))
                                             }
                                           )
