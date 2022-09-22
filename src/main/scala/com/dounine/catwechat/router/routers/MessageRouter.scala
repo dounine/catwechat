@@ -683,7 +683,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       sendText(
                                         data.data.fromGroup.get,
                                         s"""
-                                           |喵币${info.coin/10D} 💰、已经被${info.result.get.nickName}${if(info.isPick) "捡" else "抢"}到了
+                                           |喵币${info.coin/10D} 💰、已经被${info.result.get.nickName}放到小金库了
                                            |- - - - - - - - - - -
                                            |请继续挣大眼睛看下一次的喵币的掉落
                                            |""".stripMargin
