@@ -10,7 +10,7 @@ import com.dounine.catwechat.model.models.MsgLevelModel.{CoinCyUserInfo, CoinUse
 import com.dounine.catwechat.model.models.{CheckModel, ConsumModel, MessageDing, MessageModel, MsgLevelModel, RouterModel, SpeakModel}
 import com.dounine.catwechat.service.{CheckService, ConsumService, MessageService, MsgLevelService, SpeakService}
 import com.dounine.catwechat.tools.util.DingDing.MessageData
-import com.dounine.catwechat.tools.util.{CoinUtil, DingDing, IpUtils, LikeUtil, Request, ServiceSingleton, UUIDUtil}
+import com.dounine.catwechat.tools.util.{DingDing, IpUtils, LikeUtil, Request, ServiceSingleton, UUIDUtil}
 import org.slf4j.LoggerFactory
 
 import java.time.format.DateTimeFormatter
