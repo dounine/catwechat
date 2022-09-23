@@ -229,7 +229,10 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                   case Some(value) => value
                   case None => "成语游戏胜利者可得"
                 }
-                val word = cyWrods(Random.nextInt(cyWrods.length-1))
+                var word = cyWrods(Random.nextInt(cyWrods.length-1))
+                while(!cyWrods.exists(_.startsWith(word.takeRight(1)))){
+                  word = cyWrods(Random.nextInt(cyWrods.length-1))
+                }
                 sendText(
                   data.groupId,
                   s"""
@@ -724,7 +727,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           val groupId = data.data.fromGroup.get
                           if(cyMaps.contains(groupId) && !cyMaps(groupId).settle && data.data.content.length==4){
                             val cyInfo = cyMaps(groupId)
-                            val cyWord = data.data.content
+                            val cyWord = data.data.content.trim
                             val issCy: String => Boolean = (cy:String) => {
                               cyWrods.contains(cy)
                             }
@@ -754,8 +757,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                         sendText(
                                           groupId,
                                           s"""
-                                             |💥 恭喜${latestInfo.result.get.nickName}、你是此次成语获胜者
-                                             |喵币${latestInfo.coin/10D}是你的了 💥
+                                             |💥 恭喜${latestInfo.result.get.nickName} 💥
+                                             |你是本次成语接龙获胜者、喵币${latestInfo.coin/10D}💰是你的了
                                              |- - - - - - - - - - -
                                              |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
                                              |""".stripMargin
@@ -775,14 +778,15 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                               })
                               .map(_.getOrElse(""))
                               .foreach(nickName=>{
-                                if(cyInfo.cyList.isEmpty && cyWord.takeRight(1) == cyInfo.world.takeRight(1)){//第一位成语接龙成员
-                                  if(issCy(data.data.content)){
+                                if(cyInfo.cyList.isEmpty && cyWord.take(1) == cyInfo.world.takeRight(1)){//第一位成语接龙成员
+                                  if(issCy(cyWord)){
                                     sendText(
                                       groupId,
                                       s"""
-                                        |${nickName} 接的 ${cyInfo.world} 下一个成语 ${cyWord} 判定有效
+                                        |${nickName} 接的「${cyInfo.world}」下一个成语「${cyWord}」判定有效
+                                        |你是第1位接得上成语的铲屎官
                                         |- - - - - - - - - - -
-                                        |15秒内无人接得上、喵币${cyInfo.coin/10D}可归你
+                                        |15秒内无人接得上、喵币${cyInfo.coin/10D}💰即可归你
                                         |""".stripMargin
                                     )
                                     cyMaps += groupId -> cyInfo.copy(
@@ -794,14 +798,15 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                       finishSchedule = scheduleCreate(userId)
                                     )
                                   }
-                                }else if(cyWord.takeRight(1) == cyInfo.cyList.last.word.takeRight(1)){//第N位成语接龙人员
+                                }else if(cyInfo.cyList.nonEmpty && cyWord.take(1) == cyInfo.cyList.last.word.takeRight(1)){//第N位成语接龙人员
                                   if(issCy(data.data.content)){
                                     sendText(
                                       groupId,
                                       s"""
-                                         |${nickName} 接的 ${cyInfo.cyList.last.word} 下一个成语 ${cyWord} 判定有效
+                                         |${nickName} 接的「${cyInfo.cyList.last.word}」下一个成语「${cyWord}」判定有效
+                                         |你是第${cyInfo.cyList.length+1}位接得上成语的铲屎官
                                          |- - - - - - - - - - -
-                                         |15秒内无人接得上、喵币${cyInfo.coin/10D}可归你
+                                         |15秒内无人接得上、喵币${cyInfo.coin/10D}💰可归你
                                          |""".stripMargin
                                     )
                                     cyMaps += groupId -> cyInfo.copy(
@@ -888,7 +893,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                         sendText(
                                                           groupId,
                                                           s"""
-                                                             |💥 恭喜${latestInfo.result.get.nickName}、掉落的喵币${latestInfo.coin/10D}是你的了 💥
+                                                             |💥 恭喜${latestInfo.result.get.nickName} 💥
+                                                             |掉落的喵币${latestInfo.coin/10D}💰是你的了
                                                              |- - - - - - - - - - -
                                                              |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
                                                              |""".stripMargin
@@ -943,7 +949,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                         sendText(
                                                           groupId,
                                                           s"""
-                                                             |💥 恭喜${latestInfo.result.get.nickName}、掉落的喵币${latestInfo.coin/10D}是你的了 💥
+                                                             |💥 恭喜${latestInfo.result.get.nickName} 💥
+                                                             |掉落的喵币${latestInfo.coin/10D}💰是你的了
                                                              |- - - - - - - - - - -
                                                              |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
                                                              |""".stripMargin
