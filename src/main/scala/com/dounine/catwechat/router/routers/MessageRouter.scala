@@ -368,7 +368,15 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              Map(
                                                "wId" -> wId,
                                                "wcId" -> data.data.fromGroup,
-                                               "content" -> (s"「${nickName.getOrElse("")} 喵币已经达上限、请兑换后再重新${data.data.content}积累」" + "\n- - - - - - - - - - -\n" + s"当前可用喵币 ${(coin._1 + coin._2 - coin._3) / 10d}💰")
+                                               "content" ->
+                                                s"""
+                                                   |「${nickName.getOrElse("")} 喵币已经达上限、请兑换后再重新${data.data.content}积累」
+                                                   |- - - - - - - - - - -
+                                                   |当前可用喵币 ${(coin._1 + coin._2 - coin._3) / 10d}💰
+                                                   |使用方法：
+                                                   |1、发送"喵币"两个关键字、由骚骚的群主扣掉后
+                                                   |2、在小程序上下单、然后由小程序客服改价即可
+                                                   |""".stripMargin
                                              ),
                                              Map(
                                                "Authorization" -> authorization
