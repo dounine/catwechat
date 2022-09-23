@@ -255,6 +255,17 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                     cyList = Array.empty,
                     finishSchedule = None
                   )
+                  system.scheduler.scheduleOnce(1.minutes,()=>{
+                    if(cyMaps(data.groupId).cyList.isEmpty){
+                      sendText(
+                        data.groupId,
+                        s"""
+                           |本次成语接龙游戏无人参与、已结束。
+                           |""".stripMargin
+                      )
+                      cyMaps = cyMaps.filterNot(_._1==data.groupId)
+                    }
+                  })
                   ok
                 }
               }
