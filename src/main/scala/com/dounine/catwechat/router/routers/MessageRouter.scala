@@ -809,6 +809,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                          |15秒内无人接得上、喵币${cyInfo.coin/10D}💰可归你
                                          |""".stripMargin
                                     )
+                                    cyInfo.finishSchedule.foreach(_.cancel())
                                     cyMaps += groupId -> cyInfo.copy(
                                       cyList = cyInfo.cyList ++ Array(MsgLevelModel.CoinCyUserInfo(
                                         word = cyWord,
