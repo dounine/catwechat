@@ -62,7 +62,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   var cyMaps: Map[GroupId, MsgLevelModel.CYInfo] = Map[GroupId, MsgLevelModel.CYInfo]()
   val cyWrods = Source
     .fromInputStream(
-      CoinUtil.getClass.getResourceAsStream("/成语词典数据库.sql")
+      IpUtils.getClass.getResourceAsStream("/成语词典数据库.sql")
     )
     .getLines()
     .filter(_.startsWith("INSERT INTO"))
