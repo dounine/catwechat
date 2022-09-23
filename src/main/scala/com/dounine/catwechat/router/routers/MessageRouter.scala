@@ -730,7 +730,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           val userId = data.data.fromUser
                           val groupId = data.data.fromGroup.get
 
-                          if(data.data.content=="成语接龙游戏" && (cyMaps.get(groupId).isEmpty || !cyMaps(groupId).settle)){
+                          if(data.data.content=="发起成语接龙游戏" && (cyMaps.get(groupId).isEmpty || !cyMaps(groupId).settle)){
                             system.scheduler.scheduleOnce(1.minutes,()=>{
                               if(cyMaps(groupId).cyList.isEmpty){
                                 sendText(
@@ -1173,7 +1173,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     "签到",
                                     "喵币查询",
                                     "消息排行榜",
-                                    "成语接龙游戏",
+                                    "发起成语接龙游戏",
                                     "今天消息排行榜",
                                     "昨天消息排行榜",
                                     "前天消息排行榜",
