@@ -22,8 +22,11 @@ class MsgLevelService(implicit system: ActorSystem[_]) extends EnumMappers {
   implicit val slickSession =
     SlickSession.forDbAndProfile(db, slick.jdbc.MySQLProfile)
 
-  def insertOrUpdate(info: MsgLevelModel.MsgLevelInfo): Future[Int] =
-    db.run(dict+=info)
+  def insertOrUpdate(info: MsgLevelModel.MsgLevelInfo): Future[Int] = {
+    if (info.coin != 0) {
+      db.run(dict += info)
+    } else Future.successful(1)
+  }
 
   def all(wxid: String): Future[Seq[MsgLevelModel.MsgLevelInfo]] = {
     db.run(

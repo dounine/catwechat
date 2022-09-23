@@ -229,30 +229,34 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                   case Some(value) => value
                   case None => "成语游戏胜利者可得"
                 }
-                var word = cyWrods(Random.nextInt(cyWrods.length-1))
-                while(!cyWrods.exists(_.startsWith(word.takeRight(1)))){
-                  word = cyWrods(Random.nextInt(cyWrods.length-1))
+                if(cyMaps.get(data.groupId).isDefined && !cyMaps(data.groupId).settle){
+                 fail("目前有成语接龙游戏正在进行当中")
+                }else{
+                  var word = cyWrods(Random.nextInt(cyWrods.length-1))
+                  while(!cyWrods.exists(_.startsWith(word.takeRight(1)))){
+                    word = cyWrods(Random.nextInt(cyWrods.length-1))
+                  }
+                  sendText(
+                    data.groupId,
+                    s"""
+                       |北京时间${LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}、${des}${data.coin/10D} 💰喵币
+                       |本次游戏成语：${word}
+                       |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
+                       |规则一：发送4个字的成语即可参与、正确会有判定、错误没有
+                       |规则二：15秒内如果没有人接得上下一个成语、赢家为上一人
+                       |""".stripMargin
+                  )
+                  cyMaps += data.groupId -> MsgLevelModel.CYInfo(
+                    coin = data.coin,
+                    world = word,
+                    createTime = LocalDateTime.now(),
+                    settle = false,
+                    result = None,
+                    cyList = Array.empty,
+                    finishSchedule = None
+                  )
+                  ok
                 }
-                sendText(
-                  data.groupId,
-                  s"""
-                     |北京时间${LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}、${des}${data.coin/10D} 💰喵币
-                     |本次游戏成语：${word}
-                     |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
-                     |规则一：发送4个字的成语即可参与、正确会有判定、错误没有
-                     |规则二：15秒内如果没有人接得上下一个成语、赢家为上一人
-                     |""".stripMargin
-                )
-                cyMaps += data.groupId -> MsgLevelModel.CYInfo(
-                  coin = data.coin,
-                  world = word,
-                  createTime = LocalDateTime.now(),
-                  settle = false,
-                  result = None,
-                  cyList = Array.empty,
-                  finishSchedule = None
-                )
-                ok
               }
             }
           } ~path("listen" / Segment) {
@@ -725,6 +729,57 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
 
                           val userId = data.data.fromUser
                           val groupId = data.data.fromGroup.get
+
+                          if(data.data.content=="成语接龙游戏" && (cyMaps.get(groupId).isEmpty || !cyMaps(groupId).settle)){
+                            system.scheduler.scheduleOnce(1.minutes,()=>{
+                              if(cyMaps(groupId).cyList.isEmpty){
+                                sendText(
+                                  groupId,
+                                  s"""
+                                     |本次成语接龙游戏无人参与、已结束。
+                                     |""".stripMargin
+                                )
+                                cyMaps = cyMaps.filterNot(_._1==groupId)
+                              }
+                            })
+                            messageService
+                              .roomMembers(groupId)
+                              .map((member: MessageModel.ChatRoomMember) => {
+                                member.data
+                                  .find(
+                                    _.userName == data.data.fromUser
+                                  )
+                                  .map(i => i.displayName.getOrElse(i.nickName))
+                              })
+                              .map(_.getOrElse(""))
+                              .foreach(nickName=>{
+                                var word = cyWrods(Random.nextInt(cyWrods.length-1))
+                                while(!cyWrods.exists(_.startsWith(word.takeRight(1)))){
+                                  word = cyWrods(Random.nextInt(cyWrods.length-1))
+                                }
+                                sendText(
+                                  groupId,
+                                  s"""
+                                     |${nickName} 发起成语接龙游戏
+                                     |本次游戏成语：${word}
+                                     |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
+                                     |规则一：发送4个字的成语即可参与、正确会有判定、错误没有
+                                     |规则二：15秒内如果没有人接得上下一个成语、赢家为上一人
+                                     |""".stripMargin
+                                )
+                                cyMaps += groupId -> MsgLevelModel.CYInfo(
+                                  coin = 0,
+                                  world = word,
+                                  createTime = LocalDateTime.now(),
+                                  settle = false,
+                                  result = None,
+                                  cyList = Array.empty,
+                                  finishSchedule = None
+                                )
+                              })
+                          }
+
+
                           if(cyMaps.contains(groupId) && !cyMaps(groupId).settle && data.data.content.length==4){
                             val cyInfo = cyMaps(groupId)
                             val cyWord = data.data.content.trim
@@ -754,15 +809,25 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                         data.data.fromUser
                                       )
                                       .foreach(tp3=>{
-                                        sendText(
-                                          groupId,
-                                          s"""
-                                             |💥 恭喜${latestInfo.result.get.nickName} 💥
-                                             |你是本次成语接龙获胜者、喵币${latestInfo.coin/10D}💰是你的了
-                                             |- - - - - - - - - - -
-                                             |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
-                                             |""".stripMargin
-                                        )
+                                        if(latestInfo.coin==0){
+                                          sendText(
+                                            groupId,
+                                            s"""
+                                               |💥 恭喜${latestInfo.result.get.nickName} 💥
+                                               |你是本次成语接龙获胜者、空气喵币0💰是你的了
+                                               |""".stripMargin
+                                          )
+                                        }else{
+                                          sendText(
+                                            groupId,
+                                            s"""
+                                               |💥 恭喜${latestInfo.result.get.nickName} 💥
+                                               |你是本次成语接龙获胜者、喵币${latestInfo.coin/10D}💰是你的了
+                                               |- - - - - - - - - - -
+                                               |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
+                                               |""".stripMargin
+                                          )
+                                        }
                                       })
                                   })
                               }))
@@ -780,15 +845,27 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                               .foreach(nickName=>{
                                 if(cyInfo.cyList.isEmpty && cyWord.take(1) == cyInfo.world.takeRight(1)){//第一位成语接龙成员
                                   if(issCy(cyWord)){
-                                    sendText(
-                                      groupId,
-                                      s"""
-                                        |${nickName} 接的「${cyInfo.world}」下一个成语「${cyWord}」判定有效
-                                        |你是第1位接得上成语的铲屎官
-                                        |- - - - - - - - - - -
-                                        |15秒内无人接得上、喵币${cyInfo.coin/10D}💰即可归你
-                                        |""".stripMargin
-                                    )
+                                    if(cyInfo.coin==0){
+                                      sendText(
+                                        groupId,
+                                        s"""
+                                           |${nickName} 接的「${cyInfo.world}」下一个成语「${cyWord}」判定有效
+                                           |你是第1位接得上成语的铲屎官
+                                           |- - - - - - - - - - -
+                                           |15秒内无人接得上、空气喵币0💰即可归你
+                                           |""".stripMargin
+                                      )
+                                    }else{
+                                      sendText(
+                                        groupId,
+                                        s"""
+                                           |${nickName} 接的「${cyInfo.world}」下一个成语「${cyWord}」判定有效
+                                           |你是第1位接得上成语的铲屎官
+                                           |- - - - - - - - - - -
+                                           |15秒内无人接得上、喵币${cyInfo.coin/10D}💰即可归你
+                                           |""".stripMargin
+                                      )
+                                    }
                                     cyMaps += groupId -> cyInfo.copy(
                                       cyList = cyInfo.cyList ++ Array(MsgLevelModel.CoinCyUserInfo(
                                         word = cyWord,
@@ -800,15 +877,27 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                   }
                                 }else if(cyInfo.cyList.nonEmpty && cyWord.take(1) == cyInfo.cyList.last.word.takeRight(1)){//第N位成语接龙人员
                                   if(issCy(data.data.content)){
-                                    sendText(
-                                      groupId,
-                                      s"""
-                                         |${nickName} 接的「${cyInfo.cyList.last.word}」下一个成语「${cyWord}」判定有效
-                                         |你是第${cyInfo.cyList.length+1}位接得上成语的铲屎官
-                                         |- - - - - - - - - - -
-                                         |15秒内无人接得上、喵币${cyInfo.coin/10D}💰可归你
-                                         |""".stripMargin
-                                    )
+                                    if(cyInfo.coin==0){
+                                      sendText(
+                                        groupId,
+                                        s"""
+                                           |${nickName} 接的「${cyInfo.cyList.last.word}」下一个成语「${cyWord}」判定有效
+                                           |你是第${cyInfo.cyList.length+1}位接得上成语的铲屎官
+                                           |- - - - - - - - - - -
+                                           |15秒内无人接得上、空气喵币0💰可归你
+                                           |""".stripMargin
+                                      )
+                                    }else{
+                                      sendText(
+                                        groupId,
+                                        s"""
+                                           |${nickName} 接的「${cyInfo.cyList.last.word}」下一个成语「${cyWord}」判定有效
+                                           |你是第${cyInfo.cyList.length+1}位接得上成语的铲屎官
+                                           |- - - - - - - - - - -
+                                           |15秒内无人接得上、喵币${cyInfo.coin/10D}💰可归你
+                                           |""".stripMargin
+                                      )
+                                    }
                                     cyInfo.finishSchedule.foreach(_.cancel())
                                     cyMaps += groupId -> cyInfo.copy(
                                       cyList = cyInfo.cyList ++ Array(MsgLevelModel.CoinCyUserInfo(
@@ -1084,6 +1173,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                     "签到",
                                     "喵币查询",
                                     "消息排行榜",
+                                    "成语接龙游戏",
                                     "今天消息排行榜",
                                     "昨天消息排行榜",
                                     "前天消息排行榜",
