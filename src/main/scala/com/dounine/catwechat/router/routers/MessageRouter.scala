@@ -730,7 +730,14 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                           val userId = data.data.fromUser
                           val groupId = data.data.fromGroup.get
 
-                          if(data.data.content=="发起成语接龙游戏" && (cyMaps.get(groupId).isEmpty || !cyMaps(groupId).settle)){
+                          if(data.data.content=="发起成语接龙游戏" && cyMaps.get(groupId).isDefined){
+                            sendText(
+                              groupId,
+                              s"""
+                                 |成语接龙游戏正在进行中、无法重复发起。
+                                 |""".stripMargin
+                            )
+                          }else if(data.data.content=="发起成语接龙游戏" && (cyMaps.get(groupId).isEmpty || !cyMaps(groupId).settle)){
                             system.scheduler.scheduleOnce(1.minutes,()=>{
                               if(cyMaps(groupId).cyList.isEmpty){
                                 sendText(
@@ -760,7 +767,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                 sendText(
                                   groupId,
                                   s"""
-                                     |${nickName} 发起成语接龙游戏
+                                     |${nickName} 发起成语接龙游戏、奖励空气喵币
                                      |本次游戏成语：${word}
                                      |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
                                      |规则一：发送4个字的成语即可参与、正确会有判定、错误没有
@@ -789,11 +796,11 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                             val scheduleCreate: String => Option[Cancellable] = (userId:String) => {
                               Some(system.scheduler.scheduleOnce(15*1000.milliseconds, () => {
                                 var latestInfo = cyMaps(groupId)
-                                cyMaps +=  groupId -> latestInfo.copy(
+                                latestInfo = latestInfo.copy(
                                   settle = true,
                                   result = Some(latestInfo.cyList.last)
                                 )
-                                latestInfo = cyMaps(groupId)
+                                cyMaps = cyMaps.filterNot(_._1==groupId)
 
                                 msgLevelService.insertOrUpdate(MsgLevelModel.MsgLevelInfo(
                                   time = LocalDate.now(),
