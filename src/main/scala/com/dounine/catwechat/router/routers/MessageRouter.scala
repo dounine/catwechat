@@ -4,13 +4,13 @@ import akka.actor.Cancellable
 import akka.actor.typed.ActorSystem
 import akka.cluster.{Cluster, MemberStatus}
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives.{complete, _}
+import akka.http.scaladsl.server.Directives.{complete, path, _}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
-import com.dounine.catwechat.model.models.MsgLevelModel.CoinUserInfo
+import com.dounine.catwechat.model.models.MsgLevelModel.{CoinCyUserInfo, CoinUserInfo}
 import com.dounine.catwechat.model.models.{CheckModel, ConsumModel, MessageDing, MessageModel, MsgLevelModel, RouterModel, SpeakModel}
 import com.dounine.catwechat.service.{CheckService, ConsumService, MessageService, MsgLevelService, SpeakService}
 import com.dounine.catwechat.tools.util.DingDing.MessageData
-import com.dounine.catwechat.tools.util.{DingDing, IpUtils, LikeUtil, Request, ServiceSingleton, UUIDUtil}
+import com.dounine.catwechat.tools.util.{CoinUtil, DingDing, IpUtils, LikeUtil, Request, ServiceSingleton, UUIDUtil}
 import org.slf4j.LoggerFactory
 
 import java.time.format.DateTimeFormatter
@@ -18,6 +18,8 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.concurrent
 import scala.concurrent.{Await, Future, duration}
 import scala.concurrent.duration._
+import scala.io.Source
+import scala.util.Random
 
 class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
   val cluster: Cluster = Cluster.get(system)
@@ -57,6 +59,22 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
 
   type GroupId = String
   var coinMaps: Map[GroupId, MsgLevelModel.CoinInfo] = Map[GroupId, MsgLevelModel.CoinInfo]()
+  var cyMaps: Map[GroupId, MsgLevelModel.CYInfo] = Map[GroupId, MsgLevelModel.CYInfo]()
+  val cyWrods = Source
+    .fromInputStream(
+      CoinUtil.getClass.getResourceAsStream("/成语词典数据库.sql")
+    )
+    .getLines()
+    .filter(_.startsWith("INSERT INTO"))
+    .map(line => {
+      line
+        .split("""VALUES \(""")
+        .last
+        .split(",")(1)
+        .split("'")(1)
+    })
+    .filter(_.length==4)
+    .toList
 
   Request
     .post[String](
@@ -153,7 +171,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
               .queryById(id)
               .map(result => RouterModel.Data(Option(result)))
             complete(result)
-          } ~ path("coin" / "down"){
+          } ~ path("charts"){
             ok(charts)
           } ~ path("infos") {
             val result = messageService
@@ -200,6 +218,36 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                   pickSchedule = None,
                   robs = Array.empty,
                   robSchedule = None
+                )
+                ok
+              }
+            }
+          } ~ path("coin" / "cy"){
+            entity(as[MsgLevelModel.DownInfo]) {
+              data => {
+                val des = data.des match {
+                  case Some(value) => value
+                  case None => "成语游戏胜利者可得"
+                }
+                val word = cyWrods(Random.nextInt(cyWrods.length-1))
+                sendText(
+                  data.groupId,
+                  s"""
+                     |北京时间${LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}、${des}${data.coin/10D} 💰喵币
+                     |本次游戏成语：${word}
+                     |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
+                     |规则一：发送4个字的成语即可参与、正确会有判定、错误没有
+                     |规则二：15秒内如果没有人接得上下一个成语、赢家为上一人
+                     |""".stripMargin
+                )
+                cyMaps += data.groupId -> MsgLevelModel.CYInfo(
+                  coin = data.coin,
+                  world = word,
+                  createTime = LocalDateTime.now(),
+                  settle = false,
+                  result = None,
+                  cyList = Array.empty,
+                  finishSchedule = None
                 )
                 ok
               }
@@ -672,9 +720,104 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                               })
                             })
 
+                          val userId = data.data.fromUser
+                          val groupId = data.data.fromGroup.get
+                          if(cyMaps.contains(groupId) && !cyMaps(groupId).settle && data.data.content.length==4){
+                            val cyInfo = cyMaps(groupId)
+                            val cyWord = data.data.content
+                            val issCy: String => Boolean = (cy:String) => {
+                              cyWrods.contains(cy)
+                            }
+                            val scheduleCreate: String => Option[Cancellable] = (userId:String) => {
+                              Some(system.scheduler.scheduleOnce(15*1000.milliseconds, () => {
+                                var latestInfo = cyMaps(groupId)
+                                cyMaps +=  groupId -> latestInfo.copy(
+                                  settle = true,
+                                  result = Some(latestInfo.cyList.last)
+                                )
+                                latestInfo = cyMaps(groupId)
+
+                                msgLevelService.insertOrUpdate(MsgLevelModel.MsgLevelInfo(
+                                  time = LocalDate.now(),
+                                  wxid = userId,
+                                  nickName = latestInfo.result.get.nickName,
+                                  level = 0,
+                                  coin = latestInfo.coin,
+                                  createTime = LocalDateTime.now()
+                                ))
+                                  .foreach(_=>{
+                                    consumService
+                                      .accountCoin(
+                                        data.data.fromUser
+                                      )
+                                      .foreach(tp3=>{
+                                        sendText(
+                                          groupId,
+                                          s"""
+                                             |💥 恭喜${latestInfo.result.get.nickName}、你是此次成语获胜者
+                                             |喵币${latestInfo.coin/10D}是你的了 💥
+                                             |- - - - - - - - - - -
+                                             |喵币余额：${(tp3._1 + tp3._2 - tp3._3) / 10d}💰
+                                             |""".stripMargin
+                                        )
+                                      })
+                                  })
+                              }))
+                            }
+                            messageService
+                              .roomMembers(groupId)
+                              .map((member: MessageModel.ChatRoomMember) => {
+                                member.data
+                                  .find(
+                                    _.userName == data.data.fromUser
+                                  )
+                                  .map(i => i.displayName.getOrElse(i.nickName))
+                              })
+                              .map(_.getOrElse(""))
+                              .foreach(nickName=>{
+                                if(cyInfo.cyList.isEmpty && cyWord.takeRight(1) == cyInfo.world.takeRight(1)){//第一位成语接龙成员
+                                  if(issCy(data.data.content)){
+                                    sendText(
+                                      groupId,
+                                      s"""
+                                        |${nickName} 接的 ${cyInfo.world} 下一个成语 ${cyWord} 判定有效
+                                        |- - - - - - - - - - -
+                                        |15秒内无人接得上、喵币${cyInfo.coin/10D}可归你
+                                        |""".stripMargin
+                                    )
+                                    cyMaps += groupId -> cyInfo.copy(
+                                      cyList = cyInfo.cyList ++ Array(MsgLevelModel.CoinCyUserInfo(
+                                        word = cyWord,
+                                        wxid = userId,
+                                        nickName = nickName
+                                      )),
+                                      finishSchedule = scheduleCreate(userId)
+                                    )
+                                  }
+                                }else if(cyWord.takeRight(1) == cyInfo.cyList.last.word.takeRight(1)){//第N位成语接龙人员
+                                  if(issCy(data.data.content)){
+                                    sendText(
+                                      groupId,
+                                      s"""
+                                         |${nickName} 接的 ${cyInfo.cyList.last.word} 下一个成语 ${cyWord} 判定有效
+                                         |- - - - - - - - - - -
+                                         |15秒内无人接得上、喵币${cyInfo.coin/10D}可归你
+                                         |""".stripMargin
+                                    )
+                                    cyMaps += groupId -> cyInfo.copy(
+                                      cyList = cyInfo.cyList ++ Array(MsgLevelModel.CoinCyUserInfo(
+                                        word = cyWord,
+                                        wxid = userId,
+                                        nickName = nickName
+                                      )),
+                                      finishSchedule = scheduleCreate(userId)
+                                    )
+                                  }
+                                }
+                              })
+                          }
+
                           if(Array("捡","抢").contains(data.data.content)){
-                            val userId = data.data.fromUser
-                            val groupId = data.data.fromGroup.get
                             messageService
                               .roomMembers(groupId)
                               .map((member: MessageModel.ChatRoomMember) => {

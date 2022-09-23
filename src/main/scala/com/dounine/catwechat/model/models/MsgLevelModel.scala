@@ -7,9 +7,9 @@ import java.time.{LocalDate, LocalDateTime}
 object MsgLevelModel {
 
   case class DownInfo(
-      groupId:String,
-      coin:Int,
-      des:Option[String] = None
+      groupId: String,
+      coin: Int,
+      des: Option[String] = None
   ) extends BaseSerializer
 
   case class MsgLevelInfo(
@@ -44,6 +44,22 @@ object MsgLevelModel {
       pickSchedule: Option[Cancellable] = None,
       robs: Array[CoinUserInfo] = Array.empty,
       robSchedule: Option[Cancellable] = None
+  ) extends BaseSerializer
+
+  case class CoinCyUserInfo(
+      word: String,
+      wxid: String,
+      nickName: String
+  ) extends BaseSerializer
+
+  case class CYInfo(
+      coin: Int,
+      world: String,
+      settle: Boolean = false,
+      createTime: LocalDateTime,
+      result: Option[CoinCyUserInfo] = None,
+      cyList: Array[CoinCyUserInfo] = Array.empty,
+      finishSchedule: Option[Cancellable] = None
   ) extends BaseSerializer
 
 }
