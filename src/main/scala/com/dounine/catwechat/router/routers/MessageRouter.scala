@@ -185,8 +185,8 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                      |北京时间${LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}、${des}${data.coin/10D} 💰喵币
                      |获取方法：发送【 捡 】、或者【 抢 】关键字
                      |- - - - - - - - - - -- - - - - - - - - - -- - - - - - - - - - -
-                     |规则一：5秒内捡到的人没人抢可归第一个捡到的人所有
-                     |规则二：如果发生争抢、归8秒内最后抢到的一个人所有
+                     |规则一：10秒内捡到的人没人抢可归第一个捡到的人所有
+                     |规则二：如果发生争抢、归20秒内最后抢到的一个人所有
                      |规则三：这是博弈游戏、每人单次仅可以发送一次抢或捡
                      |""".stripMargin
                 )
@@ -685,7 +685,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                         s"""
                                            |喵币${info.coin/10D} 💰、已经被${info.result.get.nickName}放到小金库了
                                            |- - - - - - - - - - -
-                                           |请继续挣大眼睛看下一次的喵币的掉落
+                                           |下次手速要快一点噢~~
                                            |""".stripMargin
                                       )
                                     }else if(data.data.content=="捡"){
@@ -702,7 +702,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                           sendText(
                                             groupId,
                                             s"""
-                                               |喵币${info.coin/10D} 💰、被${nickName.get}捡了、没人抢可就归我了
+                                               |喵币${info.coin/10D} 💰、被${nickName.get}捡了、10秒没人抢可就归我了
                                                |""".stripMargin
                                           )
                                           coinMaps += data.data.fromGroup.get -> info.copy(
@@ -711,7 +711,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                 wxid = data.data.fromUser
                                             )),
                                             pickSchedule = if(info.pickSchedule.isDefined) info.pickSchedule else {
-                                              Some(system.scheduler.scheduleOnce(5000.milliseconds, () => {
+                                              Some(system.scheduler.scheduleOnce(10*1000.milliseconds, () => {
                                                 var latestInfo = coinMaps(groupId)
                                                 coinMaps +=  groupId -> latestInfo.copy(
                                                   result = latestInfo.pick,
@@ -760,7 +760,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                               wxid = data.data.fromUser
                                             )),
                                             robSchedule = if(info.robSchedule.isDefined) info.robSchedule else {
-                                              Some(system.scheduler.scheduleOnce(8000.milliseconds, () => {
+                                              Some(system.scheduler.scheduleOnce(20*1000.milliseconds, () => {
                                                 var latestInfo = coinMaps(groupId)
                                                 coinMaps +=  groupId -> latestInfo.copy(
                                                   result = Some(
