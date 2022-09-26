@@ -441,7 +441,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                    |当前可用喵币 ${(coin._1 + coin._2 - coin._3) / 10d}💰
                                                    |使用方法：
                                                    |1、发送"喵币"两个关键字、由骚骚的群主扣掉后
-                                                   |2、在小程序上下单、然后由小程序客服改价即可
+                                                   |2、在养猫专用小程序上下单、然后由小程序客服改价即可
                                                    |""".stripMargin
                                              ),
                                              Map(
@@ -449,6 +449,63 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                              )
                                            )
                                            .map(i => {
+                                             messageService
+                                               .all()
+                                               .map(ii => {
+                                                 ii.filter(_.listen)
+                                                   .filter(_.assistant)
+                                                   .find(
+                                                     _.text == "助理，小程序"
+                                                   )
+                                               })
+                                               .foreach(opt => {
+                                                 if (opt.isDefined) {
+                                                   val value = opt.get
+                                                   Request
+                                                     .post[String](
+                                                       s"${messageUrl}/${value.messageType}",
+                                                       Map(
+                                                         "wId" -> wId,
+                                                         "wcId" -> data.data.fromGroup
+                                                       ) ++ (value.messageType match {
+                                                         case "sendEmoji" |
+                                                              "sendNameCard" |
+                                                              "sendUrl" |
+                                                              "sendVideo" |
+                                                              "sendVoice" |
+                                                              "sendFile" =>
+                                                           value.sendMessage
+                                                             .split(",")
+                                                             .map(i => {
+                                                               i.split(
+                                                                 ":"
+                                                               )
+                                                             })
+                                                             .map {
+                                                               case Array(
+                                                               f1,
+                                                               f2
+                                                               ) =>
+                                                                 (f1, f2)
+                                                             }
+                                                             .toMap[
+                                                             String,
+                                                             String
+                                                           ]
+                                                         case _ =>
+                                                           Map(
+                                                             "content" -> value.sendMessage.trim
+                                                           )
+                                                       }),
+                                                       Map(
+                                                         "Authorization" -> authorization
+                                                       )
+                                                     )
+                                                     .foreach(
+                                                       result => {}
+                                                     )
+                                                 }
+                                               })
                                              (
                                                nickName,
                                                coin._1 + coin._2 - coin._3
