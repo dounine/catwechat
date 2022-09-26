@@ -442,6 +442,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                    |使用方法：
                                                    |1、发送"喵币"两个关键字、由骚骚的群主扣掉后
                                                    |2、在养猫专用小程序上下单、然后由小程序客服改价即可
+                                                   |3、单次消费金额满88可用
                                                    |""".stripMargin
                                              ),
                                              Map(
@@ -539,7 +540,7 @@ class MessageRouter()(implicit system: ActorSystem[_]) extends SuportRouter {
                                                                      )
                                                                        s"「${nickName.getOrElse("")} ${data.data.content}成功、喵币奖励 +0.2💰」"
                                                                      else
-                                                                       s"「${nickName.getOrElse("")} 重复${data.data.content}、喵币无奖励」") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n- - - - - - - - - - -\n喵币可兑换下面小程序中的所有产品")
+                                                                       s"「${nickName.getOrElse("")} 重复${data.data.content}、喵币无奖励」") + "\n" + s"当前可用喵币 ${(tp2._1._2 + tp2._2._2 - tp2._2._3) / 10d}💰") + "\n- - - - - - - - - - -\n喵币可兑换下面小程序中的所有产品、满88可用")
                                                    ),
                                                    Map(
                                                      "Authorization" -> authorization
