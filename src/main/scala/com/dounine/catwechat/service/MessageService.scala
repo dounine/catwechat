@@ -133,7 +133,7 @@ class MessageService(implicit system: ActorSystem[_]) extends EnumMappers {
           Future
             .sequence(
               wcIds
-                .grouped(20)
+                .grouped(5)
                 .map(list => {
                   Request
                     .post[MessageModel.Contact](
